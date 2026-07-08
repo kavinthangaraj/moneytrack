@@ -21,20 +21,6 @@ from sms_parser import parse_sms
 # ─── App Setup ─────────────────────────────────────────────────
 
 app = FastAPI(title="Expense Tracker")
-
-
-class DecimalEncoder(JSONResponse):
-    def render(self, content) -> bytes:
-        import json
-
-        def default(o):
-            if isinstance(o, Decimal):
-                return float(o)
-            raise TypeError
-
-        return json.dumps(content, default=default).encode("utf-8")
-
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,7 +41,7 @@ def startup():
 
 class AccountCreate(BaseModel):
     name: str
-    type: str  # credit_card, debit_card, upi, cash, wallet, other
+    type: str
     last_four: str = ""
     bank: str = ""
 
@@ -85,8 +71,8 @@ class TransactionCreate(BaseModel):
     merchant: str = ""
     category_id: Optional[int] = None
     account_id: Optional[int] = None
-    type: str = "expense"  # expense, income, transfer
-    date: str = ""  # YYYY-MM-DD
+    type: str = "expense"
+    date: str = ""
     sms_raw: str = ""
 
 
@@ -107,29 +93,22 @@ class SmsParseRequest(BaseModel):
 # ─── Helper ────────────────────────────────────────────────────
 
 
+def _to_native(val):
+    """Convert Decimal to float for JSON serialization."""
+    if isinstance(val, Decimal):
+        return float(val)
+    return val
+
+
 def row_to_dict(row):
-    """Convert sqlite3.Row or psycopg2 RealDictRow to dict."""
     if row is None:
         return None
     d = dict(row)
-    # Convert Decimal to float for JSON serialization (PostgreSQL)
-    from decimal import Decimal
-    for k, v in d.items():
-        if isinstance(v, Decimal):
-            d[k] = float(v)
-    return d
+    return {k: _to_native(v) for k, v in d.items()}
 
 
 def rows_to_list(rows):
-    from decimal import Decimal
-    result = []
-    for r in rows:
-        d = dict(r)
-        for k, v in d.items():
-            if isinstance(v, Decimal):
-                d[k] = float(v)
-        result.append(d)
-    return result
+    return [{k: _to_native(v) for k, v in dict(r).items()} for r in rows]
 
 
 # ─── Serve Frontend ────────────────────────────────────────────
@@ -338,13 +317,11 @@ def list_transactions(
 
         where = "WHERE " + " AND ".join(conditions) if conditions else ""
 
-        # Get total count
         count_row = conn.execute(
             f"SELECT COUNT(*) as cnt FROM transactions t {where}", params
         ).fetchone()
-        total = count_row["cnt"]
+        total = int(count_row["cnt"])
 
-        # Get transactions with joined names
         rows = conn.execute(
             f"""
             SELECT t.*,
@@ -477,25 +454,21 @@ def dashboard():
     month_end = now.strftime("%Y-%m-31")
 
     with get_db() as conn:
-        # This month total expenses
         row = conn.execute(
             "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = 'expense' AND date >= ? AND date <= ?",
             (month_start, month_end),
         ).fetchone()
         this_month = float(row["total"])
 
-        # This month income
         row = conn.execute(
             "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = 'income' AND date >= ? AND date <= ?",
             (month_start, month_end),
         ).fetchone()
         this_month_income = float(row["total"])
 
-        # Total transactions count
         row = conn.execute("SELECT COUNT(*) as cnt FROM transactions").fetchone()
         total_transactions = int(row["cnt"])
 
-        # Average transaction (this month)
         row = conn.execute(
             "SELECT COALESCE(AVG(amount), 0) as avg_amt FROM transactions WHERE date >= ? AND date <= ?",
             (month_start, month_end),
@@ -503,7 +476,6 @@ def dashboard():
         avg_val = row["avg_amt"]
         avg_transaction = float(avg_val) if avg_val else 0
 
-        # Category breakdown (this month)
         categories = conn.execute(
             """
             SELECT c.name, c.icon, COALESCE(SUM(t.amount), 0) as total, COUNT(t.id) as count
@@ -516,7 +488,6 @@ def dashboard():
             (month_start, month_end),
         ).fetchall()
 
-        # Account breakdown (this month)
         accounts = conn.execute(
             """
             SELECT a.name, a.type, a.bank, COALESCE(SUM(t.amount), 0) as total, COUNT(t.id) as count
@@ -529,10 +500,8 @@ def dashboard():
             (month_start, month_end),
         ).fetchall()
 
-        # Top category
         top_cat = categories[0]["name"] if categories else None
 
-        # Recent 10 transactions
         recent = conn.execute(
             """
             SELECT t.*,
@@ -546,7 +515,6 @@ def dashboard():
             """
         ).fetchall()
 
-        # Monthly trend (last 6 months)
         monthly = conn.execute(
             """
             SELECT strftime('%Y-%m', date) as month,
@@ -582,6 +550,5 @@ if __name__ == "__main__":
     print("  Running on http://localhost:8000")
     print("  Press Ctrl+C to stop\n")
 
-    import os
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
