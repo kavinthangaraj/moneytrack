@@ -21,6 +21,10 @@ class PgConnection:
         self._conn = conn
         self._lastrowid = None
 
+    @property
+    def lastrowid(self):
+        return self._lastrowid
+
     def execute(self, query, params=None):
         psycopg2, extras = get_psycopg2()
         pg_query = query.replace("?", "%s")
