@@ -1414,15 +1414,13 @@
             // Trigger sync on load and online event
             useEffect(() => {
                 if (dbReady) {
-                    triggerSync();
+                    // Clear stale sync queue on startup — data is fetched fresh from server
+                    localDB.clearSyncQueue().then(() => {
+                        setPendingCount(0);
+                        setSyncStatus(navigator.onLine ? 'synced' : 'offline');
+                    });
                 }
-            }, [dbReady, triggerSync]);
-
-            useEffect(() => {
-                const handleOnline = () => triggerSync();
-                window.addEventListener('online', handleOnline);
-                return () => window.removeEventListener('online', handleOnline);
-            }, [triggerSync]);
+            }, [dbReady]);
 
             // Track online/offline status
             useEffect(() => {
