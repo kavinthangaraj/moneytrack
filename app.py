@@ -346,7 +346,7 @@ def create_transaction(data: TransactionCreate):
     with get_db() as conn:
         cur = conn.execute(
             """INSERT INTO transactions
-               (amount, description, merchant, category_id, account_id, type, date, sms_raw)
+               (amount, description, merchant, category_id, account_id, type, "date", sms_raw)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 data.amount,
@@ -398,7 +398,7 @@ def update_transaction(tx_id: int, data: TransactionUpdate):
         if data.type is not None:
             updates["type"] = data.type
         if data.date is not None:
-            updates["date"] = data.date
+            updates['"date"'] = data.date
 
         set_clause = ", ".join(f"{k} = ?" for k in updates)
         values = list(updates.values()) + [tx_id]
