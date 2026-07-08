@@ -1,68 +1,190 @@
-import sqlite3
 import os
+import sqlite3
 from contextlib import contextmanager
 
-DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-DB_PATH = os.path.join(DB_DIR, "expenses.db")
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+USE_POSTGRES = DATABASE_URL.startswith("postgres")
+
+
+def get_psycopg2():
+    """Import psycopg2 lazily."""
+    import psycopg2
+    import psycopg2.extras
+    return psycopg2, psycopg2.extras
+
+
+class PgConnection:
+    """Wrapper to make psycopg2 behave like sqlite3.Row connections."""
+
+    def __init__(self, conn):
+        self._conn = conn
+
+    def execute(self, query, params=None):
+        # Convert SQLite-style ? placeholders to psycopg2 %s
+        pg_query = query.replace("?", "%s")
+        # Convert SQLite pragmas and functions
+        pg_query = pg_query.replace("PRAGMA journal_mode=WAL", "-- noop")
+        pg_query = pg_query.replace("PRAGMA foreign_keys=ON", "-- noop")
+        pg_query = pg_query.replace("datetime('now', 'localtime')", "NOW()")
+        pg_query = pg_query.replace("AUTOINCREMENT", "SERIAL")
+        pg_query = pg_query.replace("IF NOT EXISTS idx_", "IF NOT EXISTS idx_")
+        cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        if params:
+            cur.execute(pg_query, params)
+        else:
+            cur.execute(pg_query)
+        return cur
+
+    def executescript(self, script):
+        """Execute multiple statements (PostgreSQL)."""
+        cur = self._conn.cursor()
+        # Split by semicolons, filter empties
+        stmts = [s.strip() for s in script.split(";") if s.strip()]
+        for stmt in stmts:
+            # Convert SQLite syntax to PostgreSQL
+            pg = stmt.replace("datetime('now', 'localtime')", "NOW()")
+            pg = pg.replace("AUTOINCREMENT", "SERIAL")
+            pg = pg.replace("TEXT DEFAULT", "TEXT DEFAULT")
+            # Replace CHECK constraint syntax if needed
+            try:
+                cur.execute(pg)
+            except Exception:
+                pass  # Ignore if table already exists
+        self._conn.commit()
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        self._conn.close()
+
+
+class PgRow:
+    """Make dict results accessible like sqlite3.Row."""
+    def __init__(self, d):
+        self._d = d
+
+    def __getitem__(self, key):
+        return self._d[key]
+
+    def __contains__(self, key):
+        return key in self._d
+
+    def get(self, key, default=None):
+        return self._d.get(key, default)
+
+    def keys(self):
+        return self._d.keys()
 
 
 @contextmanager
 def get_db():
-    """Get a database connection with automatic cleanup."""
-    os.makedirs(DB_DIR, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    try:
-        yield conn
-    finally:
-        conn.close()
+    """Get a database connection — PostgreSQL or SQLite."""
+    if USE_POSTGRES:
+        psycopg2, extras = get_psycopg2()
+        conn = psycopg2.connect(DATABASE_URL)
+        conn.autocommit = False
+        try:
+            yield PgConnection(conn)
+        finally:
+            conn.close()
+    else:
+        db_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+        os.makedirs(db_dir, exist_ok=True)
+        db_path = os.path.join(db_dir, "expenses.db")
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+        try:
+            yield conn
+        finally:
+            conn.close()
 
 
 def init_db():
     """Initialize database schema and default data."""
     with get_db() as conn:
-        conn.executescript("""
-            CREATE TABLE IF NOT EXISTS accounts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                type TEXT NOT NULL CHECK(type IN ('credit_card', 'savings', 'fastag', 'wallet', 'other')),
-                last_four TEXT DEFAULT '',
-                bank TEXT DEFAULT '',
-                created_at TEXT DEFAULT (datetime('now', 'localtime'))
-            );
+        if USE_POSTGRES:
+            conn.executescript("""
+                CREATE TABLE IF NOT EXISTS accounts (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    type TEXT NOT NULL,
+                    last_four TEXT DEFAULT '',
+                    bank TEXT DEFAULT '',
+                    created_at TEXT DEFAULT NOW()
+                );
 
-            CREATE TABLE IF NOT EXISTS categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE,
-                icon TEXT DEFAULT '📦',
-                budget REAL DEFAULT 0,
-                created_at TEXT DEFAULT (datetime('now', 'localtime'))
-            );
+                CREATE TABLE IF NOT EXISTS categories (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT NOT NULL UNIQUE,
+                    icon TEXT DEFAULT '📦',
+                    budget REAL DEFAULT 0,
+                    created_at TEXT DEFAULT NOW()
+                );
 
-            CREATE TABLE IF NOT EXISTS transactions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                amount REAL NOT NULL,
-                description TEXT DEFAULT '',
-                merchant TEXT DEFAULT '',
-                category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
-                account_id INTEGER REFERENCES accounts(id) ON DELETE SET NULL,
-                type TEXT NOT NULL DEFAULT 'expense' CHECK(type IN ('expense', 'income', 'transfer')),
-                date TEXT NOT NULL,
-                sms_raw TEXT DEFAULT '',
-                created_at TEXT DEFAULT (datetime('now', 'localtime')),
-                updated_at TEXT DEFAULT (datetime('now', 'localtime'))
-            );
+                CREATE TABLE IF NOT EXISTS transactions (
+                    id SERIAL PRIMARY KEY,
+                    amount REAL NOT NULL,
+                    description TEXT DEFAULT '',
+                    merchant TEXT DEFAULT '',
+                    category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+                    account_id INTEGER REFERENCES accounts(id) ON DELETE SET NULL,
+                    type TEXT NOT NULL DEFAULT 'expense',
+                    date TEXT NOT NULL,
+                    sms_raw TEXT DEFAULT '',
+                    created_at TEXT DEFAULT NOW(),
+                    updated_at TEXT DEFAULT NOW()
+                );
 
-            CREATE INDEX IF NOT EXISTS idx_tx_date ON transactions(date);
-            CREATE INDEX IF NOT EXISTS idx_tx_category ON transactions(category_id);
-            CREATE INDEX IF NOT EXISTS idx_tx_account ON transactions(account_id);
-            CREATE INDEX IF NOT EXISTS idx_tx_type ON transactions(type);
-        """)
+                CREATE INDEX IF NOT EXISTS idx_tx_date ON transactions(date);
+                CREATE INDEX IF NOT EXISTS idx_tx_category ON transactions(category_id);
+                CREATE INDEX IF NOT EXISTS idx_tx_account ON transactions(account_id);
+                CREATE INDEX IF NOT EXISTS idx_tx_type ON transactions(type);
+            """)
+        else:
+            conn.executescript("""
+                CREATE TABLE IF NOT EXISTS accounts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    type TEXT NOT NULL CHECK(type IN ('credit_card', 'savings', 'fastag', 'wallet', 'other')),
+                    last_four TEXT DEFAULT '',
+                    bank TEXT DEFAULT '',
+                    created_at TEXT DEFAULT (datetime('now', 'localtime'))
+                );
+
+                CREATE TABLE IF NOT EXISTS categories (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL UNIQUE,
+                    icon TEXT DEFAULT '📦',
+                    budget REAL DEFAULT 0,
+                    created_at TEXT DEFAULT (datetime('now', 'localtime'))
+                );
+
+                CREATE TABLE IF NOT EXISTS transactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    amount REAL NOT NULL,
+                    description TEXT DEFAULT '',
+                    merchant TEXT DEFAULT '',
+                    category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+                    account_id INTEGER REFERENCES accounts(id) ON DELETE SET NULL,
+                    type TEXT NOT NULL DEFAULT 'expense' CHECK(type IN ('expense', 'income', 'transfer')),
+                    date TEXT NOT NULL,
+                    sms_raw TEXT DEFAULT '',
+                    created_at TEXT DEFAULT (datetime('now', 'localtime')),
+                    updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_tx_date ON transactions(date);
+                CREATE INDEX IF NOT EXISTS idx_tx_category ON transactions(category_id);
+                CREATE INDEX IF NOT EXISTS idx_tx_account ON transactions(account_id);
+                CREATE INDEX IF NOT EXISTS idx_tx_type ON transactions(type);
+            """)
 
         # Insert default categories if empty
-        count = conn.execute("SELECT COUNT(*) FROM categories").fetchone()[0]
+        count_row = conn.execute("SELECT COUNT(*) as cnt FROM categories").fetchone()
+        count = count_row["cnt"] if isinstance(count_row, dict) else (count_row[0] if count_row else 0)
         if count == 0:
             defaults = [
                 ("Food & Dining", "🍔"),
@@ -81,8 +203,9 @@ def init_db():
                 ("FASTag / Tolls", "🛣️"),
                 ("Other", "📦"),
             ]
-            conn.executemany(
-                "INSERT INTO categories (name, icon) VALUES (?, ?)", defaults
-            )
+            for name, icon in defaults:
+                conn.execute(
+                    "INSERT INTO categories (name, icon) VALUES (?, ?)", (name, icon)
+                )
 
         conn.commit()
