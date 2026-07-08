@@ -20,15 +20,13 @@ class PgConnection:
         self._conn = conn
 
     def execute(self, query, params=None):
-        # Convert SQLite-style ? placeholders to psycopg2 %s
+        psycopg2, extras = get_psycopg2()
         pg_query = query.replace("?", "%s")
-        # Convert SQLite pragmas and functions
         pg_query = pg_query.replace("PRAGMA journal_mode=WAL", "-- noop")
         pg_query = pg_query.replace("PRAGMA foreign_keys=ON", "-- noop")
         pg_query = pg_query.replace("datetime('now', 'localtime')", "NOW()")
         pg_query = pg_query.replace("AUTOINCREMENT", "SERIAL")
-        pg_query = pg_query.replace("IF NOT EXISTS idx_", "IF NOT EXISTS idx_")
-        cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur = self._conn.cursor(cursor_factory=extras.RealDictCursor)
         if params:
             cur.execute(pg_query, params)
         else:
