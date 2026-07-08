@@ -10,9 +10,10 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from decimal import Decimal
 
 from database import get_db, init_db
 from sms_parser import parse_sms
@@ -20,6 +21,20 @@ from sms_parser import parse_sms
 # ─── App Setup ─────────────────────────────────────────────────
 
 app = FastAPI(title="Expense Tracker")
+
+
+class DecimalEncoder(JSONResponse):
+    def render(self, content) -> bytes:
+        import json
+
+        def default(o):
+            if isinstance(o, Decimal):
+                return float(o)
+            raise TypeError
+
+        return json.dumps(content, default=default).encode("utf-8")
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -467,25 +482,26 @@ def dashboard():
             "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = 'expense' AND date >= ? AND date <= ?",
             (month_start, month_end),
         ).fetchone()
-        this_month = row["total"]
+        this_month = float(row["total"])
 
         # This month income
         row = conn.execute(
             "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = 'income' AND date >= ? AND date <= ?",
             (month_start, month_end),
         ).fetchone()
-        this_month_income = row["total"]
+        this_month_income = float(row["total"])
 
         # Total transactions count
         row = conn.execute("SELECT COUNT(*) as cnt FROM transactions").fetchone()
-        total_transactions = row["cnt"]
+        total_transactions = int(row["cnt"])
 
         # Average transaction (this month)
         row = conn.execute(
             "SELECT COALESCE(AVG(amount), 0) as avg_amt FROM transactions WHERE date >= ? AND date <= ?",
             (month_start, month_end),
         ).fetchone()
-        avg_transaction = row["avg_amt"]
+        avg_val = row["avg_amt"]
+        avg_transaction = float(avg_val) if avg_val else 0
 
         # Category breakdown (this month)
         categories = conn.execute(
@@ -547,7 +563,7 @@ def dashboard():
             "this_month": this_month,
             "this_month_income": this_month_income,
             "total_transactions": total_transactions,
-            "avg_transaction": round(avg_transaction, 2),
+            "avg_transaction": round(float(avg_transaction), 2),
             "top_category": top_cat,
             "categories": rows_to_list(categories),
             "accounts": rows_to_list(accounts),
