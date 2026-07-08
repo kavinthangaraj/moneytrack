@@ -429,6 +429,11 @@
             let failed = 0;
 
             for (const item of queue) {
+                // Skip items with too many retries
+                if (item.retries && item.retries >= 3) {
+                    await localDB.deleteSyncQueueItem(item.timestamp || item.id);
+                    continue;
+                }
                 try {
                     let url, method, body;
 
@@ -492,6 +497,15 @@
                     processed++;
                 } catch (err) {
                     console.warn('Sync failed for item:', item, err);
+                    // Remove 4xx client errors — they won't succeed on retry
+                    const status = err.message?.match(/HTTP (\d+)/)?.[1];
+                    if (status && parseInt(status) >= 400 && parseInt(status) < 500) {
+                        await localDB.deleteSyncQueueItem(item.timestamp || item.id);
+                    } else {
+                        // Increment retry count for server errors
+                        item.retries = (item.retries || 0) + 1;
+                        await localDB.put('sync_queue', item);
+                    }
                     failed++;
                 }
             }
