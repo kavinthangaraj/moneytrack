@@ -26,6 +26,9 @@ class PgConnection:
         pg_query = pg_query.replace("PRAGMA foreign_keys=ON", "-- noop")
         pg_query = pg_query.replace("datetime('now', 'localtime')", "NOW()")
         pg_query = pg_query.replace("AUTOINCREMENT", "SERIAL")
+        # SQLite strftime → PostgreSQL TO_CHAR
+        pg_query = pg_query.replace("strftime('%Y-%m', date)", "TO_CHAR(date::date, 'YYYY-MM')")
+        pg_query = pg_query.replace("date('now', '-6 months')", "(CURRENT_DATE - INTERVAL '6 months')")
         cur = self._conn.cursor(cursor_factory=extras.RealDictCursor)
         if params:
             cur.execute(pg_query, params)
