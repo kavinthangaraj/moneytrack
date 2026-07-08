@@ -18,6 +18,7 @@ class PgConnection:
 
     def __init__(self, conn):
         self._conn = conn
+        self._lastrowid = None
 
     def execute(self, query, params=None):
         psycopg2, extras = get_psycopg2()
@@ -29,12 +30,28 @@ class PgConnection:
         # SQLite strftime → PostgreSQL TO_CHAR
         pg_query = pg_query.replace("strftime('%Y-%m', date)", "TO_CHAR(date::date, 'YYYY-MM')")
         pg_query = pg_query.replace("date('now', '-6 months')", "(CURRENT_DATE - INTERVAL '6 months')")
+
+        # For INSERTs, add RETURNING id so we can get lastrowid
+        is_insert = pg_query.strip().upper().startswith("INSERT") and "RETURNING" not in pg_query.upper()
+        if is_insert:
+            pg_query = pg_query.rstrip(";").rstrip() + " RETURNING id"
+
         cur = self._conn.cursor(cursor_factory=extras.RealDictCursor)
         if params:
             cur.execute(pg_query, params)
         else:
             cur.execute(pg_query)
+
+        if is_insert:
+            row = cur.fetchone()
+            self._lastrowid = row["id"] if row else None
+        else:
+            self._lastrowid = None
         return cur
+
+    @property
+    def lastrowid(self):
+        return self._lastrowid
 
     def executescript(self, script):
         """Execute multiple statements (PostgreSQL)."""
