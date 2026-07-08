@@ -42,6 +42,9 @@ class PgConnection:
         pg_query = re.sub(r'(\w\.)date\s+ASC', r'\1"date" ASC', pg_query)
         pg_query = pg_query.replace("date('now', '-6 months')", "(CURRENT_DATE - INTERVAL '6 months')")
 
+        # Final pass: cast any remaining bare 'date' column comparisons
+        pg_query = re.sub(r'(?<!["\w\.])date(?=\s*(?:>=|<=|=|>|<))', '"date"::date', pg_query)
+
         is_insert = pg_query.strip().upper().startswith("INSERT") and "RETURNING" not in pg_query.upper()
         if is_insert:
             pg_query = pg_query.rstrip(";").rstrip() + " RETURNING id"
