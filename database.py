@@ -31,10 +31,15 @@ class PgConnection:
         # Quote the 'date' column to avoid conflict with PostgreSQL's date() function
         pg_query = pg_query.replace("strftime('%Y-%m', date)", "TO_CHAR(\"date\"::date, 'YYYY-MM')")
         # Quote unquoted 'date' column references (but not table-qualified t.date which is already safe)
-        pg_query = re.sub(r'(?<!\w|\.)date\s*>=\s*\?', '"date" >= %s', pg_query)
-        pg_query = re.sub(r'(?<!\w|\.)date\s*<=\s*\?', '"date" <= %s', pg_query)
+        pg_query = re.sub(r'(?<!\w|\.)date\s*>=\s*\?', '"date"::date >= %s', pg_query)
+        pg_query = re.sub(r'(?<!\w|\.)date\s*<=\s*\?', '"date"::date <= %s', pg_query)
         pg_query = re.sub(r'(?<!\w|\.)date\s+DESC', '"date" DESC', pg_query)
         pg_query = re.sub(r'(?<!\w|\.)date\s+ASC', '"date" ASC', pg_query)
+        # Also handle table-qualified t.date comparisons
+        pg_query = re.sub(r'(\w\.)date\s*>=\s*\?', r'\1"date"::date >= %s', pg_query)
+        pg_query = re.sub(r'(\w\.)date\s*<=\s*\?', r'\1"date"::date <= %s', pg_query)
+        pg_query = re.sub(r'(\w\.)date\s+DESC', r'\1"date" DESC', pg_query)
+        pg_query = re.sub(r'(\w\.)date\s+ASC', r'\1"date" ASC', pg_query)
         pg_query = pg_query.replace("date('now', '-6 months')", "(CURRENT_DATE - INTERVAL '6 months')")
 
         is_insert = pg_query.strip().upper().startswith("INSERT") and "RETURNING" not in pg_query.upper()
