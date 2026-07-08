@@ -509,8 +509,8 @@ def dashboard():
             SELECT c.name, c.icon, COALESCE(SUM(t.amount), 0) as total, COUNT(t.id) as count
             FROM categories c
             LEFT JOIN transactions t ON t.category_id = c.id AND t.date >= ? AND t.date <= ? AND t.type = 'expense'
-            GROUP BY c.id
-            HAVING total > 0
+            GROUP BY c.id, c.name, c.icon
+            HAVING COALESCE(SUM(t.amount), 0) > 0
             ORDER BY total DESC
             """,
             (month_start, month_end),
@@ -522,8 +522,8 @@ def dashboard():
             SELECT a.name, a.type, a.bank, COALESCE(SUM(t.amount), 0) as total, COUNT(t.id) as count
             FROM accounts a
             LEFT JOIN transactions t ON t.account_id = a.id AND t.date >= ? AND t.date <= ? AND t.type = 'expense'
-            GROUP BY a.id
-            HAVING total > 0
+            GROUP BY a.id, a.name, a.type, a.bank
+            HAVING COALESCE(SUM(t.amount), 0) > 0
             ORDER BY total DESC
             """,
             (month_start, month_end),
