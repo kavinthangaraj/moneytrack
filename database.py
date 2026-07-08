@@ -1,4 +1,5 @@
 import os
+import re
 import sqlite3
 from contextlib import contextmanager
 
@@ -27,7 +28,13 @@ class PgConnection:
         pg_query = pg_query.replace("PRAGMA foreign_keys=ON", "-- noop")
         pg_query = pg_query.replace("datetime('now', 'localtime')", "NOW()")
         pg_query = pg_query.replace("AUTOINCREMENT", "SERIAL")
-        pg_query = pg_query.replace("strftime('%Y-%m', date)", "TO_CHAR(date::date, 'YYYY-MM')")
+        # Quote the 'date' column to avoid conflict with PostgreSQL's date() function
+        pg_query = pg_query.replace("strftime('%Y-%m', date)", "TO_CHAR(\"date\"::date, 'YYYY-MM')")
+        # Quote unquoted 'date' column references (but not table-qualified t.date which is already safe)
+        pg_query = re.sub(r'(?<!\w|\.)date\s*>=\s*\?', '"date" >= %s', pg_query)
+        pg_query = re.sub(r'(?<!\w|\.)date\s*<=\s*\?', '"date" <= %s', pg_query)
+        pg_query = re.sub(r'(?<!\w|\.)date\s+DESC', '"date" DESC', pg_query)
+        pg_query = re.sub(r'(?<!\w|\.)date\s+ASC', '"date" ASC', pg_query)
         pg_query = pg_query.replace("date('now', '-6 months')", "(CURRENT_DATE - INTERVAL '6 months')")
 
         is_insert = pg_query.strip().upper().startswith("INSERT") and "RETURNING" not in pg_query.upper()
@@ -59,15 +66,22 @@ class PgConnection:
         # Split by semicolons, filter empties
         stmts = [s.strip() for s in script.split(";") if s.strip()]
         for stmt in stmts:
+            if not stmt.upper().startswith(("CREATE", "INSERT")):
+                continue
             # Convert SQLite syntax to PostgreSQL
             pg = stmt.replace("datetime('now', 'localtime')", "NOW()")
             pg = pg.replace("AUTOINCREMENT", "SERIAL")
             pg = pg.replace("TEXT DEFAULT", "TEXT DEFAULT")
-            # Replace CHECK constraint syntax if needed
+            # Remove CHECK constraints (not supported in SQLite migrations, not needed in PG)
+            # Quote the 'date' column to avoid reserved keyword conflicts
+            pg = re.sub(r'(?<!\w|\.)date(?=\s|$|,|\))', '"date"', pg, flags=re.IGNORECASE)
+            pg = re.sub(r"\s*CHECK\([^)]+\)", "", pg, flags=re.IGNORECASE)
             try:
                 cur.execute(pg)
-            except Exception:
-                pass  # Ignore if table already exists
+            except Exception as e:
+                # Only ignore "already exists" errors
+                if "already exists" not in str(e).lower():
+                    raise
         self._conn.commit()
 
     def commit(self):
@@ -131,7 +145,7 @@ def init_db():
                     type TEXT NOT NULL,
                     last_four TEXT DEFAULT '',
                     bank TEXT DEFAULT '',
-                    created_at TEXT DEFAULT NOW()
+                    created_at TIMESTAMP DEFAULT NOW()
                 );
 
                 CREATE TABLE IF NOT EXISTS categories (
@@ -139,7 +153,7 @@ def init_db():
                     name TEXT NOT NULL UNIQUE,
                     icon TEXT DEFAULT '📦',
                     budget REAL DEFAULT 0,
-                    created_at TEXT DEFAULT NOW()
+                    created_at TIMESTAMP DEFAULT NOW()
                 );
 
                 CREATE TABLE IF NOT EXISTS transactions (
@@ -150,13 +164,13 @@ def init_db():
                     category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
                     account_id INTEGER REFERENCES accounts(id) ON DELETE SET NULL,
                     type TEXT NOT NULL DEFAULT 'expense',
-                    date TEXT NOT NULL,
+                    "date" TEXT NOT NULL,
                     sms_raw TEXT DEFAULT '',
-                    created_at TEXT DEFAULT NOW(),
-                    updated_at TEXT DEFAULT NOW()
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
                 );
 
-                CREATE INDEX IF NOT EXISTS idx_tx_date ON transactions(date);
+                CREATE INDEX IF NOT EXISTS idx_tx_date ON transactions("date");
                 CREATE INDEX IF NOT EXISTS idx_tx_category ON transactions(category_id);
                 CREATE INDEX IF NOT EXISTS idx_tx_account ON transactions(account_id);
                 CREATE INDEX IF NOT EXISTS idx_tx_type ON transactions(type);
