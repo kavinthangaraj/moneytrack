@@ -93,14 +93,28 @@ class SmsParseRequest(BaseModel):
 
 
 def row_to_dict(row):
-    """Convert sqlite3.Row to dict."""
+    """Convert sqlite3.Row or psycopg2 RealDictRow to dict."""
     if row is None:
         return None
-    return dict(row)
+    d = dict(row)
+    # Convert Decimal to float for JSON serialization (PostgreSQL)
+    from decimal import Decimal
+    for k, v in d.items():
+        if isinstance(v, Decimal):
+            d[k] = float(v)
+    return d
 
 
 def rows_to_list(rows):
-    return [dict(r) for r in rows]
+    from decimal import Decimal
+    result = []
+    for r in rows:
+        d = dict(r)
+        for k, v in d.items():
+            if isinstance(v, Decimal):
+                d[k] = float(v)
+        result.append(d)
+    return result
 
 
 # ─── Serve Frontend ────────────────────────────────────────────
