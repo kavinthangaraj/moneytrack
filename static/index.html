@@ -715,6 +715,7 @@
             if (!data) return <div className="p-5 md:p-8 text-2xs uppercase tracking-[0.2em] text-swiss-muted pt-16 md:pt-8">Loading</div>;
 
             const COLORS = ['#e53935','#111111','#888888','#aaaaaa','#cccccc','#dddddd'];
+            const ACCOUNT_COLORS = ['#e53935','#111111','#888888','#aaaaaa','#cccccc','#dddddd','#007aff','#34c759'];
             const catLabels = (data.categories || []).map(c => c.name);
             const catData = (data.categories || []).map(c => c.total);
             const accLabels = (data.accounts || []).map(a => a.name);
@@ -742,51 +743,52 @@
                         ))}
                     </div>
 
-                    {/* Charts - stacked on mobile */}
-                    <div className="space-y-px bg-swiss-border md:bg-transparent">
+                    {/* Monthly + Categories combined */}
+                    <div className="bg-white border border-swiss-border p-4 md:p-5">
+                        <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted mb-4">Monthly Trend</p>
                         {(data.monthly || []).length > 0 && (
-                            <div className="bg-white p-4 md:p-5">
-                                <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted mb-4">Monthly</p>
-                                <BarChart
-                                    labels={(data.monthly || []).map(m => { const [y,mo] = m.month.split('-'); return new Date(y,mo-1).toLocaleString('en',{month:'short'}); })}
-                                    data={(data.monthly || []).map(m => m.expenses)}
-                                    color="#e53935"
-                                />
-                            </div>
+                            <BarChart
+                                labels={(data.monthly || []).map(m => { const [y,mo] = m.month.split('-'); return new Date(y,mo-1).toLocaleString('en',{month:'short'}); })}
+                                data={(data.monthly || []).map(m => m.expenses)}
+                                color="#e53935"
+                            />
                         )}
                         {catLabels.length > 0 && (
-                            <div className="bg-white p-4 md:p-5">
-                                <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted mb-4">Categories</p>
-                                <div className="flex items-center gap-4 md:gap-6">
-                                    <div className="w-24 h-24 md:w-32 md:h-32 shrink-0">
-                                        <DoughnutChart labels={catLabels} data={catData} colors={COLORS} />
-                                    </div>
-                                    <div className="flex-1 space-y-1.5">
-                                        {data.categories.slice(0, 5).map((c, i) => (
-                                            <div key={c.name} className="flex items-center gap-2">
-                                                <span className="w-2 h-0.5 shrink-0" style={{background: COLORS[i]}} />
-                                                <span className="text-2xs text-swiss-muted flex-1 uppercase tracking-wider truncate">{c.name}</span>
-                                                <span className="text-2xs font-medium tabular-nums">{fmt(c.total)}</span>
+                            <div className="mt-5 pt-5 border-t border-swiss-border">
+                                <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted mb-3">Categories</p>
+                                <div className="space-y-2">
+                                    {data.categories.slice(0, 6).map((c, i) => {
+                                        const maxCat = Math.max(...data.categories.map(x => x.total));
+                                        const pct = maxCat > 0 ? (c.total / maxCat) * 100 : 0;
+                                        return (
+                                            <div key={c.name}>
+                                                <div className="flex justify-between mb-1">
+                                                    <span className="text-2xs text-swiss-muted uppercase tracking-wider">{c.icon} {c.name}</span>
+                                                    <span className="text-2xs font-medium tabular-nums">{fmt(c.total)}</span>
+                                                </div>
+                                                <div className="h-1.5 bg-swiss-surface rounded-full overflow-hidden">
+                                                    <div className="h-full bg-swiss-red rounded-full" style={{width: `${pct}%`}} />
+                                                </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Accounts */}
+                    {/* Accounts donut - adjusted mobile spacing */}
                     {accLabels.length > 0 && (
-                        <div className="border border-swiss-border p-4 md:p-5">
-                            <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted mb-4">Accounts</p>
-                            <div className="flex items-center gap-4 md:gap-6">
-                                <div className="w-24 h-24 md:w-32 md:h-32 shrink-0">
-                                    <DoughnutChart labels={accLabels} data={accData} colors={COLORS.slice(2)} />
+                        <div className="border border-swiss-border p-4 md:p-5 -mt-1">
+                            <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted mb-3">Accounts</p>
+                            <div className="flex items-center gap-3 md:gap-6">
+                                <div className="w-20 h-20 md:w-28 md:h-28 shrink-0 -mt-1 md:mt-0">
+                                    <DoughnutChart labels={accLabels} data={accData} colors={ACCOUNT_COLORS} />
                                 </div>
                                 <div className="flex-1 space-y-1.5">
                                     {data.accounts.map((a, i) => (
                                         <div key={a.name} className="flex items-center gap-2">
-                                            <span className="w-2 h-0.5 shrink-0" style={{background: COLORS[i+2]}} />
+                                            <span className="w-2 h-2 rounded-full shrink-0" style={{background: ACCOUNT_COLORS[i]}} />
                                             <span className="text-2xs text-swiss-muted flex-1 uppercase tracking-wider truncate">{a.name}</span>
                                             <span className="text-2xs font-medium tabular-nums">{fmt(a.total)}</span>
                                         </div>
