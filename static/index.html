@@ -760,6 +760,7 @@
                                     {data.categories.slice(0, 6).map((c, i) => {
                                         const maxCat = Math.max(...data.categories.map(x => x.total));
                                         const pct = maxCat > 0 ? (c.total / maxCat) * 100 : 0;
+                                        const CAT_COLORS = ['#e53935','#111111','#888888','#007aff','#34c759','#ff9500'];
                                         return (
                                             <div key={c.name}>
                                                 <div className="flex justify-between mb-1">
@@ -767,7 +768,7 @@
                                                     <span className="text-2xs font-medium tabular-nums">{fmt(c.total)}</span>
                                                 </div>
                                                 <div className="h-1.5 bg-swiss-surface rounded-full overflow-hidden">
-                                                    <div className="h-full bg-swiss-red rounded-full" style={{width: `${pct}%`}} />
+                                                    <div className="h-full rounded-full" style={{width: `${pct}%`, background: CAT_COLORS[i % CAT_COLORS.length]}} />
                                                 </div>
                                             </div>
                                         );
