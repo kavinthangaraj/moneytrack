@@ -610,7 +610,7 @@
         // ═══════════════════════════════════════════════════════════════
         // Charts
         // ═══════════════════════════════════════════════════════════════
-        function DoughnutChart({ labels, data, colors }) {
+        function DoughnutChart({ labels, data, colors, height }) {
             const ref = useRef(null);
             const chart = useRef(null);
             useEffect(() => {
@@ -623,7 +623,7 @@
                 });
                 return () => { if (chart.current) chart.current.destroy(); };
             }, [data]);
-            return <div style={{height: '140px'}}><canvas ref={ref} /></div>;
+            return <div style={{height: height || '140px'}}><canvas ref={ref} /></div>;
         }
 
         function BarChart({ labels, data, color }) {
@@ -780,11 +780,11 @@
 
                     {/* Accounts donut - adjusted mobile spacing */}
                     {accLabels.length > 0 && (
-                        <div className="border border-swiss-border p-4 md:p-5 -mt-1">
+                        <div className="border border-swiss-border p-4 md:p-5">
                             <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted mb-3">Accounts</p>
                             <div className="flex items-center gap-3 md:gap-6">
-                                <div className="w-20 h-20 md:w-28 md:h-28 shrink-0 -mt-1 md:mt-0">
-                                    <DoughnutChart labels={accLabels} data={accData} colors={ACCOUNT_COLORS} />
+                                <div className="w-20 h-20 md:w-28 md:h-28 shrink-0">
+                                    <DoughnutChart labels={accLabels} data={accData} colors={ACCOUNT_COLORS} height="80px" />
                                 </div>
                                 <div className="flex-1 space-y-1.5">
                                     {data.accounts.map((a, i) => (
