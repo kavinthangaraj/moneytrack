@@ -264,7 +264,7 @@ def extract_merchant(sms_text):
     """Extract merchant/payee name from SMS."""
     patterns = [
         # "at MERCHANT on DATE" or "to MERCHANT on DATE"
-        r"(?:at|to|paid to|spent at|transferred to|payment to)\s+(.+?)(?:\s+on\s+|\s+\.?\s*(?:Avl|UPI|Ref|Txn|available|Your|If))",
+        r"(?:at|to|paid to|spent at|transferred to|payment to)\s+(.+?)(?=(?:\s+on\s+|\s+via\s+|\s+using\s+|\s+\.?\s*(?:Avl|UPI|Ref|Txn|available|Your|If)|\s*$))",
         # "merchant/store/shop: NAME"
         r"(?:merchant|store|shop|payee|beneficiary)[:\s]+(.+?)(?:\s*[.\n]|\s*$)",
         # "NAME has been paid"
