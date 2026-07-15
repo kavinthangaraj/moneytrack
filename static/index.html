@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#c0c0c0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="MoneyTrack">
@@ -16,21 +16,28 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'] },
+                    fontFamily: { sans: ['"MS Sans Serif"', '"Chicago"', 'Helvetica', 'Arial', 'sans-serif'] },
                     colors: {
-                        swiss: {
-                            bg: '#ffffff',
-                            surface: '#fafafa',
-                            border: '#e5e5e5',
-                            muted: '#888888',
-                            text: '#111111',
-                            red: '#e53935',
-                            black: '#111111',
+                        win95: {
+                            bg: '#c0c0c0',
+                            surface: '#d4d0c8',
+                            bevel: '#f0f0f0',
+                            border: '#000000',
+                            muted: '#808080',
+                            text: '#000000',
+                            purple: '#9333EA',
+                            red: '#FF0000',
+                            blue: '#0000FF',
+                            green: '#00AA00',
+                            yellow: '#FFFF00',
+                            orange: '#FF6600',
+                            dark: '#808080',
+                            black: '#000000',
+                            white: '#FFFFFF',
                         }
                     },
                     fontSize: {
@@ -41,43 +48,258 @@
         }
     </script>
     <style>
-        * { font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-        body { background: #ffffff; color: #111111; letter-spacing: -0.01em; }
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #ddd; }
-        .fade-in { animation: fadeIn 0.12s ease-out; }
+        /* ─── Retro 90s / Win95 Theme ─── */
+        * { font-family: 'MS Sans Serif', 'Chicago', Helvetica, Arial, sans-serif; }
+        body { background: #c0c0c0; color: #000000; margin: 0; }
+
+        /* Win95 beveled button */
+        .btn-95 {
+            border: 2px solid;
+            border-color: #FFFFFF #808080 #808080 #FFFFFF;
+            background: #c0c0c0;
+            color: #000000;
+            font-family: 'MS Sans Serif','Chicago',Helvetica,Arial,sans-serif;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 6px 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            min-height: 34px;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 1px 1px 0px #000000;
+        }
+        .btn-95:active {
+            border-color: #808080 #FFFFFF #FFFFFF #808080;
+            box-shadow: none;
+            transform: translate(1px, 1px);
+        }
+        .btn-95:disabled {
+            color: #808080;
+            border-color: #c0c0c0 #c0c0c0 #c0c0c0 #c0c0c0;
+            cursor: default;
+        }
+        .btn-95-purple {
+            background: #9333EA;
+            color: #FFFFFF;
+            border-color: #c084fc #6b21a8 #6b21a8 #c084fc;
+        }
+        .btn-95-purple:active {
+            border-color: #6b21a8 #c084fc #c084fc #6b21a8;
+        }
+
+        /* Win95 sunken input */
+        .input-95 {
+            border: 2px solid;
+            border-color: #808080 #FFFFFF #FFFFFF #808080;
+            background: #FFFFFF;
+            color: #000000;
+            font-family: 'MS Sans Serif','Chicago',Helvetica,Arial,sans-serif;
+            font-size: 14px;
+            padding: 8px 12px;
+            min-height: 36px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .input-95:focus {
+            border-color: #808080 #FFFFFF #FFFFFF #808080;
+            outline: 1px dotted #000000;
+            outline-offset: -3px;
+        }
+        select.input-95 {
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
+        }
+
+        /* Win95 raised panel */
+        .panel-95 {
+            border: 2px solid;
+            border-color: #FFFFFF #808080 #808080 #FFFFFF;
+            background: #d4d0c8;
+        }
+        /* Win95 sunken panel */
+        .panel-95-sunken {
+            border: 2px solid;
+            border-color: #808080 #FFFFFF #FFFFFF #808080;
+            background: #c0c0c0;
+        }
+
+        /* Win95 etched divider */
+        .divider-95 {
+            border: none;
+            border-top: 1px solid #808080;
+            border-bottom: 1px solid #FFFFFF;
+            margin: 0;
+        }
+
+        /* Thick border + offset shadow cards */
+        .card-95 {
+            border: 3px solid #000000;
+            background: #d4d0c8;
+            box-shadow: 4px 4px 0px 0px #000000;
+        }
+
+        /* Win95 grid */
+        .grid-95 {
+            display: grid;
+            gap: 2px;
+        }
+
+        /* Fade-in (keep for consistency) */
+        .fade-in { animation: fadeIn 0.15s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #e53935; }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: none; }
-        select { -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
-        .swiss-grid { display: grid; gap: 1px; background: #e5e5e5; }
-        .swiss-grid > * { background: #ffffff; }
+
+        /* Win95 chunky scrollbar */
+        ::-webkit-scrollbar { width: 16px; }
+        ::-webkit-scrollbar-track { background: #c0c0c0; border: 1px solid #808080; }
+        ::-webkit-scrollbar-thumb { background: #c0c0c0; border: 2px solid; border-color: #FFFFFF #808080 #808080 #FFFFFF; min-height: 20px; }
+        ::-webkit-scrollbar-thumb:active { border-color: #808080 #FFFFFF #FFFFFF #808080; }
+        ::-webkit-scrollbar-button { display: block; background: #c0c0c0; border: 2px solid; border-color: #FFFFFF #808080 #808080 #FFFFFF; height: 16px; }
+        ::-webkit-scrollbar-button:active { border-color: #808080 #FFFFFF #FFFFFF #808080; }
+        ::-webkit-scrollbar-button:vertical:decrement { background: #c0c0c0; }
+        ::-webkit-scrollbar-button:vertical:increment { background: #c0c0c0; }
+
+        /* Hit-counter display */
+        .hit-counter {
+            font-family: 'Courier New', 'Courier', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            color: #000000;
+            background: #000000;
+            padding: 2px 6px;
+            letter-spacing: 2px;
+            display: inline-block;
+        }
+        .hit-counter span {
+            background: #c0c0c0;
+            padding: 0 3px;
+            margin: 0 1px;
+        }
+
+        /* Sidebar overlay */
+        .sidebar-overlay { background: rgba(0,0,0,0.5); }
+
         /* Mobile optimizations */
         @media (max-width: 768px) {
             body { -webkit-tap-highlight-color: transparent; }
-            input, select, textarea { font-size: 16px !important; } /* Prevent iOS zoom */
+            input, select, textarea { font-size: 16px !important; }
         }
-        .sidebar-overlay { background: rgba(0,0,0,0.3); }
+
+        /* Sidebar transitions */
         .sidebar-open { transform: translateX(0) !important; }
         @media (max-width: 767px) {
-            aside { transform: translateX(-100%); transition: transform 0.2s ease; z-index: 50; }
+            aside { transform: translateX(-100%); transition: transform 0.15s ease; z-index: 50; }
             aside.sidebar-open { transform: translateX(0); }
             main { margin-left: 0 !important; }
         }
+
         /* Bottom sheet modal on mobile */
         @media (max-width: 767px) {
-            .modal-content { position: fixed; bottom: 0; left: 0; right: 0; max-height: 90vh; border-radius: 16px 16px 0 0; }
+            .modal-content { position: fixed; bottom: 0; left: 0; right: 0; max-height: 90vh; border: 3px solid #000000; border-bottom: none; background: #d4d0c8; }
         }
         @media (min-width: 768px) {
-            .modal-content { position: relative; max-width: 28rem; border-radius: 0; }
+            .modal-content { position: relative; max-width: 28rem; border: 3px solid #000000; background: #d4d0c8; box-shadow: 4px 4px 0px 0px #000000; }
         }
-        /* Safe area padding for notched phones */
+
+        /* Safe area */
         .safe-top { padding-top: env(safe-area-inset-top); }
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+        /* Chart container */
+        .chart-95 {
+            border: 2px solid #000000;
+            padding: 8px;
+            background: #FFFFFF;
+        }
+
+        /* Label style */
+        .label-95 {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #000000;
+            margin-bottom: 4px;
+        }
+
+        /* Unsynced indicator */
+        .unsynced-95 {
+            background: #FFFF00;
+        }
+
+        /* Mobile FAB */
+        .fab-95 {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: #9333EA;
+            color: #FFFFFF;
+            border: 3px solid #000000;
+            font-size: 28px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 3px 3px 0px 0px #000000;
+            cursor: pointer;
+            z-index: 20;
+        }
+        .fab-95:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px 0px #000000;
+        }
+
+        /* Icon badge */
+        .badge-95 {
+            border: 2px solid #000000;
+            background: #d4d0c8;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Progress bar retro */
+        .progress-95-track {
+            background: #FFFFFF;
+            border: 2px solid;
+            border-color: #808080 #FFFFFF #FFFFFF #808080;
+            height: 12px;
+            overflow: hidden;
+        }
+        .progress-95-fill {
+            height: 100%;
+            background: #9333EA;
+        }
+
+        /* Toast retro */
+        .toast-95 {
+            background: #000000;
+            color: #FFFFFF;
+            font-family: 'MS Sans Serif','Chicago',Helvetica,Arial,sans-serif;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 8px 16px;
+            border: 2px solid #FFFFFF;
+        }
+        .toast-95-error {
+            background: #FF0000;
+        }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen" style="background:#c0c0c0">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -535,8 +757,8 @@
         function Toast({ message, type, onClose }) {
             useEffect(() => { const t = setTimeout(onClose, 2000); return () => clearTimeout(t); }, []);
             return (
-                <div className={`fixed top-0 left-0 right-0 z-50 flex justify-center py-3 safe-top fade-in ${type === 'error' ? 'bg-swiss-red' : 'bg-swiss-black'}`}>
-                    <span className="text-xs font-medium uppercase tracking-widest text-white">{message}</span>
+                <div className={`fixed top-0 left-0 right-0 z-50 flex justify-center py-2 safe-top fade-in ${type === 'error' ? 'toast-95-error' : 'toast-95'}`}>
+                    <span className="text-xs font-bold uppercase tracking-wider text-white">{message}</span>
                 </div>
             );
         }
@@ -547,17 +769,15 @@
         function SyncIndicator() {
             const { status, pendingCount } = useContext(SyncContext);
 
-            const bgClass = status === 'synced' ? 'bg-green-50' : status === 'syncing' ? 'bg-yellow-50' : 'bg-red-50';
-            const dotClass = status === 'synced' ? 'bg-green-500' : status === 'syncing' ? 'bg-yellow-500' : 'bg-red-500';
             const text = status === 'synced' ? 'Synced'
                 : status === 'syncing' ? 'Syncing…'
                 : pendingCount > 0 ? `${pendingCount} pending`
                 : 'Offline';
 
             return (
-                <div className={`${bgClass} border-b border-swiss-border/50 px-4 py-1.5 flex items-center justify-center gap-2 safe-top`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${dotClass} ${status === 'syncing' ? 'animate-pulse' : ''}`} />
-                    <span className="text-2xs font-medium uppercase tracking-[0.15em] text-swiss-muted">{text}</span>
+                <div className="panel-95-sunken px-4 py-1.5 flex items-center justify-center gap-2 safe-top">
+                    <span className={`w-2 h-2 ${status === 'synced' ? 'bg-win95-green' : status === 'syncing' ? 'bg-win95-yellow' : 'bg-win95-red'} ${status === 'syncing' ? 'animate-pulse' : ''}`} style={{border: '1px solid #000'}} />
+                    <span className="text-xs font-bold uppercase tracking-wider text-win95-text">{text}</span>
                 </div>
             );
         }
@@ -570,16 +790,16 @@
             return (
                 <div className="fixed inset-0 z-40 flex items-end md:items-center justify-center" onClick={onClose}>
                     <div className="absolute inset-0 sidebar-overlay" />
-                    <div className="modal-content bg-white w-full max-h-[90vh] overflow-y-auto fade-in safe-bottom" onClick={e => e.stopPropagation()}>
+                    <div className="modal-content w-full max-h-[90vh] overflow-y-auto fade-in safe-bottom" onClick={e => e.stopPropagation()}>
                         {/* Drag handle on mobile */}
                         <div className="md:hidden flex justify-center pt-3 pb-1">
-                            <div className="w-10 h-1 bg-gray-300 rounded-full" />
+                            <div className="w-10 h-1 bg-win95-dark" style={{border: '1px solid #808080'}} />
                         </div>
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-swiss-border sticky top-0 bg-white z-10">
-                            <h3 className="text-2xs font-semibold uppercase tracking-[0.2em] text-swiss-muted">{title}</h3>
-                            <button onClick={onClose} className="text-swiss-muted hover:text-swiss-text text-lg leading-none w-8 h-8 flex items-center justify-center">&times;</button>
+                        <div className="flex items-center justify-between px-4 py-3 divider-95 sticky top-0 bg-win95-surface z-10">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-win95-text">{title}</h3>
+                            <button onClick={onClose} className="btn-95 w-8 h-8 flex items-center justify-center p-0 text-lg leading-none">&times;</button>
                         </div>
-                        <div className="p-5">{children}</div>
+                        <div className="p-4">{children}</div>
                     </div>
                 </div>
             );
@@ -591,16 +811,16 @@
         function Input({ label, ...props }) {
             return (
                 <div>
-                    <label className="block text-2xs font-medium uppercase tracking-[0.15em] text-swiss-muted mb-1.5">{label}</label>
-                    <input {...props} className="w-full bg-white border border-swiss-border px-4 py-3.5 text-base text-swiss-text placeholder-swiss-muted/50 transition min-h-[48px]" />
+                    <label className="label-95">{label}</label>
+                    <input {...props} className="input-95" />
                 </div>
             );
         }
         function Select({ label, children, ...props }) {
             return (
                 <div>
-                    <label className="block text-2xs font-medium uppercase tracking-[0.15em] text-swiss-muted mb-1.5">{label}</label>
-                    <select {...props} className="w-full bg-white border border-swiss-border px-4 py-3.5 text-base text-swiss-text transition min-h-[48px]">
+                    <label className="label-95">{label}</label>
+                    <select {...props} className="input-95">
                         {children}
                     </select>
                 </div>
@@ -639,8 +859,8 @@
                         responsive: true, maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
                         scales: {
-                            x: { grid: { display: false }, border: { display: false }, ticks: { color: '#888', font: { size: 9 } } },
-                            y: { grid: { color: '#f0f0f0' }, border: { display: false }, ticks: { color: '#888', font: { size: 9 }, callback: v => v >= 1000 ? (v/1000)+'k' : v } }
+                            x: { grid: { display: false, color: '#000000' }, border: { display: true, color: '#000000' }, ticks: { color: '#000000', font: { size: 9 } } },
+                            y: { grid: { color: '#808080' }, border: { display: true, color: '#000000' }, ticks: { color: '#000000', font: { size: 9 }, callback: v => v >= 1000 ? (v/1000)+'k' : v } }
                         }
                     }
                 });
@@ -664,25 +884,25 @@
             return (
                 <>
                     {open && <div className="fixed inset-0 sidebar-overlay z-40 md:hidden" onClick={() => setOpen(false)} />}
-                    <aside className={`${open ? 'sidebar-open' : ''} w-56 bg-swiss-surface border-r border-swiss-border flex flex-col min-h-screen fixed left-0 top-0 md:translate-x-0`}>
-                        <div className="p-5 border-b border-swiss-border flex items-center justify-between">
-                            <h1 className="text-2xs font-bold uppercase tracking-[0.25em]">MoneyTrack</h1>
-                            <button onClick={() => setOpen(false)} className="md:hidden text-swiss-muted w-8 h-8 flex items-center justify-center">&times;</button>
+                    <aside className={`${open ? 'sidebar-open' : ''} w-56 bg-win95-surface border-r-2 border-r-win95-dark flex flex-col min-h-screen fixed left-0 top-0 md:translate-x-0`}>
+                        <div className="px-4 py-3 divider-95 flex items-center justify-between">
+                            <h1 className="text-xs font-bold uppercase tracking-wider text-win95-purple" style={{textShadow: '1px 1px 0 #000'}}>MoneyTrack</h1>
+                            <button onClick={() => setOpen(false)} className="btn-95 w-8 h-8 flex items-center justify-center p-0 text-lg leading-none md:hidden">&times;</button>
                         </div>
-                        <nav className="flex-1 py-4">
+                        <nav className="flex-1 py-2">
                             {NAV.map(item => (
                                 <button key={item.id} onClick={() => { setPage(item.id); setOpen(false); }}
-                                    className={`w-full text-left px-5 py-3 text-2xs uppercase tracking-[0.15em] transition min-h-[44px] flex items-center ${
-                                        page === item.id ? 'text-swiss-text border-l-[3px] border-swiss-red pl-[17px]' : 'text-swiss-muted hover:text-swiss-text border-l-[3px] border-transparent pl-[17px]'
+                                    className={`w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition min-h-[36px] flex items-center ${
+                                        page === item.id ? 'text-white bg-win95-purple border-l-4 border-l-win95-black' : 'text-win95-text hover:bg-win95-bg border-l-4 border-l-transparent'
                                     }`}>
                                     {item.label}
                                 </button>
                             ))}
                         </nav>
-                        <div className="p-5 border-t border-swiss-border">
+                        <div className="px-4 py-3 divider-95">
                             <div className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-swiss-red" />
-                                <span className="text-2xs uppercase tracking-[0.15em] text-swiss-muted">Local</span>
+                                <span className="w-2 h-2 bg-win95-purple" style={{border: '1px solid #000'}} />
+                                <span className="text-xs font-bold uppercase tracking-wider text-win95-dark">v1.0 · OFFLINE</span>
                             </div>
                         </div>
                     </aside>
@@ -696,11 +916,11 @@
         function MobileHeader({ onMenuClick, page }) {
             const title = NAV.find(n => n.id === page)?.label || 'MoneyTrack';
             return (
-                <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-swiss-border z-30 px-4 py-3 flex items-center gap-3 safe-top">
-                    <button onClick={onMenuClick} className="text-swiss-muted w-10 h-10 flex items-center justify-center -ml-2">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                <div className="md:hidden fixed top-0 left-0 right-0 bg-win95-surface border-b-2 border-b-win95-dark z-30 px-3 py-2 flex items-center gap-3 safe-top">
+                    <button onClick={onMenuClick} className="btn-95 w-10 h-10 flex items-center justify-center p-0">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
                     </button>
-                    <span className="text-sm font-semibold uppercase tracking-wider">{title}</span>
+                    <span className="text-sm font-bold uppercase tracking-wider text-win95-purple" style={{textShadow: '1px 1px 0 #000'}}>{title}</span>
                 </div>
             );
         }
@@ -712,63 +932,66 @@
             const [data, setData] = useState(null);
             useEffect(() => { api.getDashboard().then(setData).catch(() => {}); }, []);
 
-            if (!data) return <div className="p-5 md:p-8 text-2xs uppercase tracking-[0.2em] text-swiss-muted pt-16 md:pt-8">Loading</div>;
+            if (!data) return <div className="p-5 md:p-8 text-xs font-bold uppercase tracking-wider text-win95-dark pt-16 md:pt-8">Loading Dashboard…</div>;
 
-            const COLORS = ['#e53935','#111111','#888888','#aaaaaa','#cccccc','#dddddd'];
-            const ACCOUNT_COLORS = ['#e53935','#111111','#888888','#aaaaaa','#cccccc','#dddddd','#007aff','#34c759'];
+            const COLORS = ['#FF0000','#000000','#9333EA','#0000FF','#00AA00','#FF6600','#FFFF00','#808080'];
+            const ACCOUNT_COLORS = ['#FF0000','#0000FF','#9333EA','#00AA00','#FF6600','#FFFF00','#000000','#808080'];
             const catLabels = (data.categories || []).map(c => c.name);
             const catData = (data.categories || []).map(c => c.total);
             const accLabels = (data.accounts || []).map(a => a.name);
             const accData = (data.accounts || []).map(a => a.total);
 
             return (
-                <div className="p-4 md:p-8 space-y-6 md:space-y-10 fade-in pt-16 md:pt-8 safe-top">
-                    <div className="flex items-baseline justify-between border-b border-swiss-border pb-4">
-                        <h2 className="text-lg font-semibold tracking-tight">Overview</h2>
-                        <span className="text-2xs uppercase tracking-[0.2em] text-swiss-muted">{new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
+                <div className="p-3 md:p-6 space-y-4 md:space-y-6 fade-in pt-16 md:pt-8 safe-top">
+                    {/* Page title bar */}
+                    <div className="flex items-baseline justify-between px-2 pb-2 divider-95">
+                        <h2 className="text-base font-bold uppercase tracking-wider" style={{textShadow: '1px 1px 0 #808080'}}>Overview</h2>
+                        <span className="text-xs font-bold uppercase tracking-wider text-win95-dark">{new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
                     </div>
 
-                    {/* Stats - 2x2 on mobile, 4-col on desktop */}
-                    <div className="swiss-grid grid-cols-2 md:grid-cols-4">
+                    {/* Stats - Hit-counter style */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {[
                             { label: 'Spent', value: fmt(data.this_month) },
                             { label: 'Income', value: fmt(data.this_month_income) },
-                            { label: 'Txns', value: data.total_transactions },
+                            { label: 'Txns', value: String(data.total_transactions || 0).padStart(4, '0') },
                             { label: 'Avg', value: fmt(data.avg_transaction) },
                         ].map(s => (
-                            <div key={s.label} className="p-4">
-                                <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted mb-1.5">{s.label}</p>
-                                <p className="text-lg md:text-xl font-light tracking-tight">{s.value}</p>
+                            <div key={s.label} className="card-95 p-3">
+                                <span className="label-95 !text-win95-dark mb-1">{s.label}</span>
+                                <p className="font-mono text-xl font-bold tracking-wider">{s.value}</p>
                             </div>
                         ))}
                     </div>
 
-                    {/* Monthly + Categories combined */}
-                    <div className="bg-white border border-swiss-border p-4 md:p-5">
-                        <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted mb-4">Monthly Trend</p>
+                    {/* Monthly Trend + Categories */}
+                    <div className="card-95 p-4">
+                        <span className="label-95">Monthly Trend</span>
                         {(data.monthly || []).length > 0 && (
-                            <BarChart
-                                labels={(data.monthly || []).map(m => { const [y,mo] = m.month.split('-'); return new Date(y,mo-1).toLocaleString('en',{month:'short'}); })}
-                                data={(data.monthly || []).map(m => m.expenses)}
-                                color="#e53935"
-                            />
+                            <div className="chart-95 mt-2">
+                                <BarChart
+                                    labels={(data.monthly || []).map(m => { const [y,mo] = m.month.split('-'); return new Date(y,mo-1).toLocaleString('en',{month:'short'}); })}
+                                    data={(data.monthly || []).map(m => m.expenses)}
+                                    color="#9333EA"
+                                />
+                            </div>
                         )}
                         {catLabels.length > 0 && (
-                            <div className="mt-5 pt-5 border-t border-swiss-border">
-                                <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted mb-3">Categories</p>
+                            <div className="mt-4 pt-4 divider-95">
+                                <span className="label-95 mb-3">Categories</span>
                                 <div className="space-y-2">
                                     {data.categories.slice(0, 6).map((c, i) => {
                                         const maxCat = Math.max(...data.categories.map(x => x.total));
                                         const pct = maxCat > 0 ? (c.total / maxCat) * 100 : 0;
-                                        const CAT_COLORS = ['#e53935','#111111','#888888','#007aff','#34c759','#ff9500'];
+                                        const CAT_COLORS = ['#FF0000','#000000','#9333EA','#0000FF','#00AA00','#FF6600'];
                                         return (
                                             <div key={c.name}>
                                                 <div className="flex justify-between mb-1">
-                                                    <span className="text-2xs text-swiss-muted uppercase tracking-wider">{c.icon} {c.name}</span>
-                                                    <span className="text-2xs font-medium tabular-nums">{fmt(c.total)}</span>
+                                                    <span className="text-xs font-bold uppercase tracking-wider text-win95-text">{c.icon} {c.name}</span>
+                                                    <span className="text-xs font-bold tabular-nums">{fmt(c.total)}</span>
                                                 </div>
-                                                <div className="h-1.5 bg-swiss-surface rounded-full overflow-hidden">
-                                                    <div className="h-full rounded-full" style={{width: `${pct}%`, background: CAT_COLORS[i % CAT_COLORS.length]}} />
+                                                <div className="progress-95-track">
+                                                    <div className="progress-95-fill" style={{width: `${pct}%`, background: CAT_COLORS[i % CAT_COLORS.length]}} />
                                                 </div>
                                             </div>
                                         );
@@ -778,20 +1001,22 @@
                         )}
                     </div>
 
-                    {/* Accounts donut - adjusted mobile spacing */}
+                    {/* Accounts donut */}
                     {accLabels.length > 0 && (
-                        <div className="border border-swiss-border p-4 md:p-5">
-                            <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted mb-3">Accounts</p>
+                        <div className="card-95 p-4">
+                            <span className="label-95 mb-3">Accounts</span>
                             <div className="flex items-center gap-3 md:gap-6">
                                 <div className="w-20 h-20 md:w-28 md:h-28 shrink-0">
-                                    <DoughnutChart labels={accLabels} data={accData} colors={ACCOUNT_COLORS} height="80px" />
+                                    <div className="chart-95">
+                                        <DoughnutChart labels={accLabels} data={accData} colors={ACCOUNT_COLORS} height="80px" />
+                                    </div>
                                 </div>
                                 <div className="flex-1 space-y-1.5">
                                     {data.accounts.map((a, i) => (
                                         <div key={a.name} className="flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full shrink-0" style={{background: ACCOUNT_COLORS[i]}} />
-                                            <span className="text-2xs text-swiss-muted flex-1 uppercase tracking-wider truncate">{a.name}</span>
-                                            <span className="text-2xs font-medium tabular-nums">{fmt(a.total)}</span>
+                                            <span className="w-3 h-3 shrink-0" style={{background: ACCOUNT_COLORS[i], border: '1px solid #000'}} />
+                                            <span className="text-xs font-bold uppercase tracking-wider text-win95-text flex-1 truncate">{a.name}</span>
+                                            <span className="text-xs font-bold tabular-nums">{fmt(a.total)}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -799,19 +1024,19 @@
                         </div>
                     )}
 
-                    {/* Recent - compact on mobile */}
+                    {/* Recent - Win95 list */}
                     {data.recent?.length > 0 && (
-                        <div className="border border-swiss-border">
-                            <div className="px-4 py-3 border-b border-swiss-border">
-                                <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted">Recent</p>
+                        <div className="panel-95">
+                            <div className="px-3 py-2 bg-win95-bg" style={{borderBottom: '2px solid #808080'}}>
+                                <span className="text-xs font-bold uppercase tracking-wider">Recent Transactions</span>
                             </div>
                             {data.recent.map(tx => (
-                                <div key={tx.id} className="flex items-center justify-between px-4 py-3.5 border-b border-swiss-border/50 last:border-0">
-                                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                                        <span className="text-2xs text-swiss-muted w-10 shrink-0 tabular-nums">{tx.date?.slice(5)}</span>
-                                        <span className="text-sm truncate">{tx.merchant || tx.description || '—'}</span>
+                                <div key={tx.id} className="flex items-center justify-between px-3 py-2.5 divider-95 last:border-b-0">
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        <span className="text-xs font-mono font-bold text-win95-dark w-12 shrink-0 tabular-nums">{tx.date ? tx.date.slice(8) + '/' + tx.date.slice(5, 7) : ''}</span>
+                                        <span className="text-sm font-bold truncate">{tx.merchant || tx.description || '—'}</span>
                                     </div>
-                                    <span className={`text-sm font-medium tabular-nums shrink-0 ml-3 ${tx.type === 'income' ? 'text-swiss-black' : 'text-swiss-red'}`}>
+                                    <span className={`text-sm font-bold tabular-nums shrink-0 ml-3 ${tx.type === 'income' ? 'text-win95-text' : 'text-win95-red'}`}>
                                         {tx.type === 'income' ? '+' : '-'}{fmt(tx.amount)}
                                     </span>
                                 </div>
@@ -821,7 +1046,8 @@
 
                     {!data.categories?.length && !data.recent?.length && (
                         <div className="text-center py-16">
-                            <p className="text-2xs uppercase tracking-[0.2em] text-swiss-muted">No data yet</p>
+                            <p className="text-xs font-bold uppercase tracking-wider text-win95-dark">No data yet</p>
+                            <p className="text-xs font-bold uppercase tracking-wider text-win95-muted mt-2">Add a transaction to get started</p>
                         </div>
                     )}
                 </div>
@@ -842,11 +1068,11 @@
 
             return (
                 <form onSubmit={e => { e.preventDefault(); if (!form.amount) return; onSave({ ...form, amount: Number(form.amount), category_id: form.category_id || null, account_id: form.account_id || null }); }} className="space-y-4">
-                    {/* Amount - prominent on mobile */}
-                    <div className="bg-swiss-surface p-4 border border-swiss-border">
-                        <label className="block text-2xs font-medium uppercase tracking-[0.15em] text-swiss-muted mb-2">Amount</label>
+                    {/* Amount - prominent */}
+                    <div className="panel-95-sunken p-4">
+                        <label className="label-95 mb-2">Amount (₹)</label>
                         <input type="number" step="0.01" min="0" value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="0.00" required autoFocus
-                            className="w-full bg-transparent text-3xl font-light text-swiss-text placeholder-swiss-muted/30 outline-none tabular-nums" />
+                            className="w-full bg-transparent text-3xl font-bold text-win95-text placeholder-win95-muted/40 outline-none tabular-nums" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -871,12 +1097,12 @@
 
                     <Input label="Notes" value={form.description} onChange={e => set('description', e.target.value)} placeholder="Optional" />
 
-                    {/* Full-width buttons on mobile */}
+                    {/* Retro buttons */}
                     <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
-                        <button type="button" onClick={onCancel} className="w-full sm:w-auto px-6 border border-swiss-border text-swiss-muted py-3.5 text-2xs uppercase tracking-[0.15em] hover:border-swiss-muted transition min-h-[48px]">
+                        <button type="button" onClick={onCancel} className="btn-95 w-full sm:w-auto sm:flex-1">
                             Cancel
                         </button>
-                        <button type="submit" className="w-full sm:flex-1 bg-swiss-black text-white py-3.5 text-2xs font-semibold uppercase tracking-[0.15em] hover:bg-swiss-black/90 transition min-h-[48px]">
+                        <button type="submit" className="btn-95 btn-95-purple w-full sm:flex-1">
                             {editing ? 'Update' : 'Save'}
                         </button>
                     </div>
@@ -952,19 +1178,19 @@
             };
 
             return (
-                <div className="p-4 md:p-8 space-y-4 fade-in pt-16 md:pt-8 safe-top">
+                <div className="p-3 md:p-6 space-y-4 fade-in pt-16 md:pt-8 safe-top">
                     {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-                    <div className="flex items-center justify-between border-b border-swiss-border pb-4">
+                    <div className="flex items-center justify-between px-2 pb-2 divider-95">
                         <div>
-                            <h2 className="text-lg font-semibold tracking-tight">Transactions</h2>
-                            <p className="text-2xs uppercase tracking-[0.2em] text-swiss-muted mt-1">{total} total</p>
+                            <h2 className="text-base font-bold uppercase tracking-wider" style={{textShadow: '1px 1px 0 #808080'}}>Transactions</h2>
+                            <p className="text-xs font-bold uppercase tracking-wider text-win95-dark mt-1">{total} total</p>
                         </div>
-                        <button onClick={() => { setEditing(null); setShowForm(true); }} className="bg-swiss-black text-white px-5 py-2.5 text-2xs font-semibold uppercase tracking-[0.15em] hover:bg-swiss-black/90 transition min-h-[44px]">
+                        <button onClick={() => { setEditing(null); setShowForm(true); }} className="btn-95 btn-95-purple">
                             + Add
                         </button>
                     </div>
 
-                    {/* Mobile: toggle filters / Desktop: always show */}
+                    {/* Desktop filters */}
                     <div className="hidden md:grid grid-cols-6 gap-3">
                         <Input label="From" type="date" value={f.start_date} onChange={e => sf('start_date', e.target.value)} />
                         <Input label="To" type="date" value={f.end_date} onChange={e => sf('end_date', e.target.value)} />
@@ -985,12 +1211,12 @@
 
                     {/* Mobile: collapsible filters */}
                     <div className="md:hidden">
-                        <button onClick={() => setShowFilters(!showFilters)} className="w-full text-left text-2xs uppercase tracking-[0.15em] text-swiss-muted py-2 flex items-center gap-2">
+                        <button onClick={() => setShowFilters(!showFilters)} className="w-full text-left text-xs font-bold uppercase tracking-wider text-win95-dark py-2 flex items-center gap-2">
                             <svg className={`w-3 h-3 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                             Filters
                         </button>
                         {showFilters && (
-                            <div className="space-y-3 pb-3 border-b border-swiss-border">
+                            <div className="space-y-3 pb-3 divider-95">
                                 <div className="grid grid-cols-2 gap-3">
                                     <Input label="From" type="date" value={f.start_date} onChange={e => sf('start_date', e.target.value)} />
                                     <Input label="To" type="date" value={f.end_date} onChange={e => sf('end_date', e.target.value)} />
@@ -1014,43 +1240,43 @@
                         )}
                     </div>
 
-                    {/* List */}
-                    <div className="border border-swiss-border">
+                    {/* Transaction list */}
+                    <div className="panel-95">
                         {txs.length === 0 ? (
-                            <div className="p-8 text-center text-2xs uppercase tracking-[0.2em] text-swiss-muted">No transactions</div>
+                            <div className="p-6 text-center text-xs font-bold uppercase tracking-wider text-win95-dark">No transactions</div>
                         ) : txs.map(tx => (
-                            <div key={tx.id} className={`flex items-center justify-between px-4 py-3.5 border-b border-swiss-border/50 last:border-0 active:bg-swiss-surface transition ${tx._synced === false ? 'bg-yellow-50/30' : ''}`}>
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <span className="text-2xs text-swiss-muted w-10 shrink-0 tabular-nums">{tx.date?.slice(5)}</span>
+                            <div key={tx.id} className={`flex items-center justify-between px-3 py-2.5 divider-95 last:border-b-0 ${tx._synced === false ? 'unsynced-95' : ''}`}>
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <span className="text-xs font-mono font-bold text-win95-dark w-12 shrink-0 tabular-nums">{tx.date ? tx.date.slice(8) + '/' + tx.date.slice(5, 7) : ''}</span>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm truncate">{tx.merchant || tx.description || '—'}</p>
-                                        <p className="text-2xs text-swiss-muted truncate">{tx.category_name || ''} · {tx.account_name || ''}</p>
+                                        <p className="text-sm font-bold truncate">{tx.merchant || tx.description || '—'}</p>
+                                        <p className="text-xs font-bold text-win95-dark truncate">{tx.category_name || ''} · {tx.account_name || ''}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1 shrink-0 ml-3">
-                                    <span className={`text-sm font-medium tabular-nums ${tx.type === 'income' ? 'text-swiss-black' : 'text-swiss-red'}`}>
+                                <div className="flex items-center gap-0 shrink-0 ml-3">
+                                    <span className={`text-sm font-bold tabular-nums mr-2 ${tx.type === 'income' ? 'text-win95-text' : 'text-win95-red'}`}>
                                         {tx.type === 'income' ? '+' : '-'}{fmt(tx.amount)}
                                     </span>
                                     <button onClick={() => { setEditing(tx); setShowForm(true); }}
-                                        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-swiss-black hover:bg-gray-100 rounded transition">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                        className="btn-95 w-8 h-8 flex items-center justify-center p-0 text-xs">
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                     </button>
                                     <button onClick={() => handleDelete(tx.id)}
-                                        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        className="btn-95 w-8 h-8 flex items-center justify-center p-0 text-xs">
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     </button>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    {/* Mobile: floating add button */}
+                    {/* Mobile FAB */}
                     <button onClick={() => { setEditing(null); setShowForm(true); }}
-                        className="sm:hidden fixed bottom-6 right-6 w-14 h-14 bg-swiss-black text-white rounded-full flex items-center justify-center text-2xl shadow-lg z-20 active:scale-95 transition">
+                        className="sm:hidden fab-95">
                         +
                     </button>
 
-                    <Modal open={showForm} onClose={() => { setShowForm(false); setEditing(null); }} title={editing ? 'Edit' : 'New Transaction'}>
+                    <Modal open={showForm} onClose={() => { setShowForm(false); setEditing(null); }} title={editing ? 'Edit Transaction' : 'New Transaction'}>
                         <TransactionForm accounts={accounts} categories={categories} editing={editing} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null); }} />
                     </Modal>
                 </div>
@@ -1094,36 +1320,36 @@
             };
 
             return (
-                <div className="p-4 md:p-8 space-y-5 fade-in pt-16 md:pt-8 safe-top">
+                <div className="p-3 md:p-6 space-y-4 fade-in pt-16 md:pt-8 safe-top">
                     {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-                    <div className="border-b border-swiss-border pb-4">
-                        <h2 className="text-lg font-semibold tracking-tight">SMS Import</h2>
-                        <p className="text-2xs uppercase tracking-[0.2em] text-swiss-muted mt-1">Paste a bank SMS. We extract the details.</p>
+                    <div className="px-2 pb-2 divider-95">
+                        <h2 className="text-base font-bold uppercase tracking-wider" style={{textShadow: '1px 1px 0 #808080'}}>SMS Import</h2>
+                        <p className="text-xs font-bold uppercase tracking-wider text-win95-dark mt-1">Paste a bank SMS. We extract the details.</p>
                     </div>
 
-                    <div className="border border-swiss-border p-4 space-y-4">
+                    <div className="card-95 p-4 space-y-4">
                         <textarea value={smsText} onChange={e => { setSmsText(e.target.value); if (parsed) setParsed(null); }}
                             placeholder="Paste SMS here..."
-                            className="w-full h-28 bg-swiss-surface border border-swiss-border p-3 text-sm font-mono text-swiss-text placeholder-swiss-muted/40 resize-none transition" />
+                            className="input-95 h-28 font-mono resize-none" />
                         <button onClick={handleParse} disabled={!smsText.trim()}
-                            className="w-full sm:w-auto bg-swiss-red text-white px-8 py-3 text-2xs font-semibold uppercase tracking-[0.15em] disabled:opacity-30 transition min-h-[48px]">
-                            Parse
+                            className="btn-95 btn-95-purple w-full sm:w-auto disabled:opacity-30">
+                            Parse SMS
                         </button>
                         {parsed && (
-                            <span className={`text-2xs uppercase tracking-[0.15em] ${parsed.confidence === 'high' ? 'text-swiss-black' : 'text-swiss-muted'}`}>
+                            <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 badge-95 ${parsed.confidence === 'high' ? '' : ''}`}>
                                 {parsed.confidence} confidence
                             </span>
                         )}
                     </div>
 
                     {parsed && (
-                        <div className="border border-swiss-border p-4 md:p-5 space-y-4 fade-in">
-                            <p className="text-2xs font-medium uppercase tracking-[0.2em] text-swiss-muted">Parsed result</p>
+                        <div className="card-95 p-4 space-y-4 fade-in">
+                            <span className="label-95">Parsed result</span>
 
-                            <div className="bg-swiss-surface p-4 border border-swiss-border">
-                                <label className="block text-2xs font-medium uppercase tracking-[0.15em] text-swiss-muted mb-2">Amount</label>
+                            <div className="panel-95-sunken p-4">
+                                <label className="label-95 mb-2">Amount (₹)</label>
                                 <input type="number" step="0.01" min="0" value={form.amount} onChange={e => set('amount', e.target.value)}
-                                    className="w-full bg-transparent text-2xl font-light text-swiss-text placeholder-swiss-muted/30 outline-none tabular-nums" />
+                                    className="w-full bg-transparent text-2xl font-bold text-win95-text placeholder-win95-muted/30 outline-none tabular-nums" />
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
@@ -1149,14 +1375,14 @@
                             <Input label="Notes" value={form.description} onChange={e => set('description', e.target.value)} />
 
                             <div className="flex flex-wrap gap-2">
-                                {parsed.bank && <span className="text-2xs uppercase tracking-[0.15em] text-swiss-muted bg-swiss-surface px-2 py-1">{parsed.bank}</span>}
-                                {parsed.upi_app && <span className="text-2xs uppercase tracking-[0.15em] text-swiss-muted bg-swiss-surface px-2 py-1">{parsed.upi_app}</span>}
-                                {parsed.last_four && <span className="text-2xs uppercase tracking-[0.15em] text-swiss-muted bg-swiss-surface px-2 py-1">****{parsed.last_four}</span>}
+                                {parsed.bank && <span className="text-xs font-bold uppercase tracking-wider px-2 py-1 badge-95">{parsed.bank}</span>}
+                                {parsed.upi_app && <span className="text-xs font-bold uppercase tracking-wider px-2 py-1 badge-95">{parsed.upi_app}</span>}
+                                {parsed.last_four && <span className="text-xs font-bold uppercase tracking-wider px-2 py-1 badge-95">****{parsed.last_four}</span>}
                             </div>
 
                             <button onClick={handleSave} disabled={saving || !form.amount}
-                                className="w-full bg-swiss-black text-white py-3.5 text-2xs font-semibold uppercase tracking-[0.15em] disabled:opacity-30 transition min-h-[48px]">
-                                {saving ? '...' : 'Save'}
+                                className="btn-95 btn-95-purple w-full disabled:opacity-30">
+                                {saving ? 'Saving…' : 'Save Transaction'}
                             </button>
                         </div>
                     )}
@@ -1192,30 +1418,30 @@
             };
 
             return (
-                <div className="p-4 md:p-8 space-y-4 fade-in pt-16 md:pt-8 safe-top">
+                <div className="p-3 md:p-6 space-y-4 fade-in pt-16 md:pt-8 safe-top">
                     {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-                    <div className="flex items-center justify-between border-b border-swiss-border pb-4">
-                        <h2 className="text-lg font-semibold tracking-tight">Accounts</h2>
-                        <button onClick={openAdd} className="bg-swiss-black text-white px-5 py-2.5 text-2xs font-semibold uppercase tracking-[0.15em] hover:bg-swiss-black/90 transition min-h-[44px]">+ Add</button>
+                    <div className="flex items-center justify-between px-2 pb-2 divider-95">
+                        <h2 className="text-base font-bold uppercase tracking-wider" style={{textShadow: '1px 1px 0 #808080'}}>Accounts</h2>
+                        <button onClick={openAdd} className="btn-95 btn-95-purple">+ Add</button>
                     </div>
 
-                    <div className="border border-swiss-border">
+                    <div className="panel-95">
                         {accounts.length === 0 ? (
-                            <div className="p-8 text-center text-2xs uppercase tracking-[0.2em] text-swiss-muted">No accounts</div>
+                            <div className="p-6 text-center text-xs font-bold uppercase tracking-wider text-win95-dark">No accounts</div>
                         ) : accounts.map(a => (
-                            <div key={a.id} className={`flex items-center justify-between px-4 py-4 border-b border-swiss-border/50 last:border-0 active:bg-swiss-surface transition ${a._synced === false ? 'bg-yellow-50/30' : ''}`}>
+                            <div key={a.id} className={`flex items-center justify-between px-3 py-2.5 divider-95 last:border-b-0 ${a._synced === false ? 'unsynced-95' : ''}`}>
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <div className="w-10 h-10 bg-swiss-surface border border-swiss-border flex items-center justify-center text-2xs uppercase tracking-wider shrink-0">
+                                    <div className="w-10 h-10 badge-95 text-sm shrink-0">
                                         {a.type?.slice(0,2)}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-sm font-medium truncate">{a.name}</p>
-                                        <p className="text-2xs text-swiss-muted">{a.bank} {a.last_four && `****${a.last_four}`}</p>
+                                        <p className="text-sm font-bold truncate">{a.name}</p>
+                                        <p className="text-xs font-bold text-win95-dark">{a.bank} {a.last_four && `****${a.last_four}`}</p>
                                     </div>
                                 </div>
-                                <div className="flex gap-3 shrink-0 ml-3">
-                                    <button onClick={() => openEdit(a)} className="text-2xs text-swiss-red uppercase tracking-wider min-w-[44px] min-h-[44px] flex items-center justify-center">Edit</button>
-                                    <button onClick={() => handleDelete(a.id)} className="text-2xs text-swiss-muted uppercase tracking-wider min-w-[44px] min-h-[44px] flex items-center justify-center">Del</button>
+                                <div className="flex gap-2 shrink-0 ml-3">
+                                    <button onClick={() => openEdit(a)} className="btn-95 text-xs">Edit</button>
+                                    <button onClick={() => handleDelete(a.id)} className="btn-95 text-xs">Del</button>
                                 </div>
                             </div>
                         ))}
@@ -1223,7 +1449,7 @@
 
                     {/* Mobile FAB */}
                     <button onClick={openAdd}
-                        className="sm:hidden fixed bottom-6 right-6 w-14 h-14 bg-swiss-black text-white rounded-full flex items-center justify-center text-2xl shadow-lg z-20 active:scale-95 transition">
+                        className="sm:hidden fab-95">
                         +
                     </button>
 
@@ -1238,8 +1464,8 @@
                                 <Input label="Last 4" value={form.last_four} onChange={e => set('last_four', e.target.value)} placeholder="1234" maxLength={4} />
                             </div>
                             <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
-                                <button onClick={() => setShowForm(false)} className="w-full sm:w-auto px-6 border border-swiss-border text-swiss-muted py-3.5 text-2xs uppercase tracking-[0.15em] min-h-[48px]">Cancel</button>
-                                <button onClick={handleSave} className="w-full sm:flex-1 bg-swiss-black text-white py-3.5 text-2xs font-semibold uppercase tracking-[0.15em] min-h-[48px]">{editing ? 'Update' : 'Add'}</button>
+                                <button onClick={() => setShowForm(false)} className="btn-95 w-full sm:flex-1">Cancel</button>
+                                <button onClick={handleSave} className="btn-95 btn-95-purple w-full sm:flex-1">{editing ? 'Update' : 'Add'}</button>
                             </div>
                         </div>
                     </Modal>
@@ -1276,26 +1502,26 @@
             };
 
             return (
-                <div className="p-4 md:p-8 space-y-4 fade-in pt-16 md:pt-8 safe-top">
+                <div className="p-3 md:p-6 space-y-4 fade-in pt-16 md:pt-8 safe-top">
                     {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-                    <div className="flex items-center justify-between border-b border-swiss-border pb-4">
-                        <h2 className="text-lg font-semibold tracking-tight">Categories</h2>
-                        <button onClick={openAdd} className="bg-swiss-black text-white px-5 py-2.5 text-2xs font-semibold uppercase tracking-[0.15em] hover:bg-swiss-black/90 transition min-h-[44px]">+ Add</button>
+                    <div className="flex items-center justify-between px-2 pb-2 divider-95">
+                        <h2 className="text-base font-bold uppercase tracking-wider" style={{textShadow: '1px 1px 0 #808080'}}>Categories</h2>
+                        <button onClick={openAdd} className="btn-95 btn-95-purple">+ Add</button>
                     </div>
 
-                    <div className="swiss-grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid-95 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                         {categories.map(c => (
-                            <div key={c.id} className={`p-4 flex items-center justify-between active:bg-swiss-surface transition ${c._synced === false ? 'bg-yellow-50/30' : ''}`}>
+                            <div key={c.id} className={`card-95 p-3 flex items-center justify-between ${c._synced === false ? 'unsynced-95' : ''}`}>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xl">{c.icon}</span>
+                                    <span className="text-2xl">{c.icon}</span>
                                     <div>
-                                        <p className="text-sm">{c.name}</p>
-                                        {c.budget > 0 && <p className="text-2xs text-swiss-muted">Budget: {fmt(c.budget)}</p>}
+                                        <p className="text-sm font-bold">{c.name}</p>
+                                        {c.budget > 0 && <p className="text-xs font-bold text-win95-dark">Budget: {fmt(c.budget)}</p>}
                                     </div>
                                 </div>
                                 <div className="flex gap-1">
-                                    <button onClick={() => openEdit(c)} className="text-2xs text-swiss-red uppercase tracking-wider min-w-[44px] min-h-[44px] flex items-center justify-center">Edit</button>
-                                    <button onClick={() => handleDelete(c.id)} className="text-2xs text-swiss-muted uppercase tracking-wider min-w-[44px] min-h-[44px] flex items-center justify-center">Del</button>
+                                    <button onClick={() => openEdit(c)} className="btn-95 text-xs">Edit</button>
+                                    <button onClick={() => handleDelete(c.id)} className="btn-95 text-xs">Del</button>
                                 </div>
                             </div>
                         ))}
@@ -1303,7 +1529,7 @@
 
                     {/* Mobile FAB */}
                     <button onClick={openAdd}
-                        className="sm:hidden fixed bottom-6 right-6 w-14 h-14 bg-swiss-black text-white rounded-full flex items-center justify-center text-2xl shadow-lg z-20 active:scale-95 transition">
+                        className="sm:hidden fab-95">
                         +
                     </button>
 
@@ -1311,11 +1537,11 @@
                         <div className="space-y-4">
                             <Input label="Name" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Category name" autoFocus />
                             <div>
-                                <label className="block text-2xs font-medium uppercase tracking-[0.15em] text-swiss-muted mb-2">Icon</label>
+                                <label className="label-95 mb-2">Icon</label>
                                 <div className="flex flex-wrap gap-2">
                                     {ICONS.map(e => (
                                         <button key={e} type="button" onClick={() => set('icon', e)}
-                                            className={`w-11 h-11 border flex items-center justify-center text-lg transition ${form.icon === e ? 'border-swiss-red bg-swiss-red/5' : 'border-swiss-border hover:border-swiss-muted'}`}>
+                                            className={`w-11 h-11 btn-95 flex items-center justify-center text-lg ${form.icon === e ? 'btn-95-purple' : ''}`}>
                                             {e}
                                         </button>
                                     ))}
@@ -1323,8 +1549,8 @@
                             </div>
                             <Input label="Budget (₹/month)" type="number" min="0" step="100" value={form.budget} onChange={e => set('budget', Number(e.target.value))} placeholder="0" />
                             <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
-                                <button onClick={() => setShowForm(false)} className="w-full sm:w-auto px-6 border border-swiss-border text-swiss-muted py-3.5 text-2xs uppercase tracking-[0.15em] min-h-[48px]">Cancel</button>
-                                <button onClick={handleSave} className="w-full sm:flex-1 bg-swiss-black text-white py-3.5 text-2xs font-semibold uppercase tracking-[0.15em] min-h-[48px]">{editing ? 'Update' : 'Add'}</button>
+                                <button onClick={() => setShowForm(false)} className="btn-95 w-full sm:flex-1">Cancel</button>
+                                <button onClick={handleSave} className="btn-95 btn-95-purple w-full sm:flex-1">{editing ? 'Update' : 'Add'}</button>
                             </div>
                         </div>
                     </Modal>
@@ -1444,8 +1670,13 @@
             }, [triggerSync]);
 
             if (!dbReady) {
-                return <div className="flex items-center justify-center min-h-screen">
-                    <span className="text-2xs uppercase tracking-[0.2em] text-swiss-muted">Loading…</span>
+                return <div className="flex items-center justify-center min-h-screen" style={{background: '#c0c0c0'}}>
+                    <div className="card-95 p-6 text-center">
+                        <span className="text-xs font-bold uppercase tracking-wider text-win95-text block">Loading MoneyTrack…</span>
+                        <div className="progress-95-track mt-3 w-48 mx-auto">
+                            <div className="progress-95-fill animate-pulse" style={{width: '60%'}} />
+                        </div>
+                    </div>
                 </div>;
             }
 
@@ -1454,8 +1685,7 @@
                     <div className="flex min-h-screen">
                         <Sidebar page={page} setPage={setPage} open={sidebarOpen} setOpen={setSidebarOpen} />
                         <MobileHeader onMenuClick={() => setSidebarOpen(true)} page={page} />
-                        <main className="flex-1 md:ml-56">
-                            {/* Sync indicator - below mobile header, above content */}
+                        <main className="flex-1 md:ml-56" style={{background: '#c0c0c0'}}>
                             <SyncIndicator />
                             {page === 'dashboard' && <Dashboard />}
                             {page === 'transactions' && <Transactions accounts={accounts} categories={categories} onReload={reloadAccounts} />}
