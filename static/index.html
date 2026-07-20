@@ -580,9 +580,8 @@
             const thisMonth = expenses.reduce((s, t) => s + Number(t.amount || 0), 0);
             const thisMonthIncome = incomes.reduce((s, t) => s + Number(t.amount || 0), 0);
             const totalTransactions = transactions.length;
-            const avgTransaction = totalTransactions > 0
-                ? transactions.reduce((s, t) => s + Number(t.amount || 0), 0) / totalTransactions
-                : 0;
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const avgDailySpend = daysInMonth > 0 ? (thisMonth - thisMonthIncome) / daysInMonth : 0;
 
             // Category breakdown
             const catMap = {};
@@ -629,7 +628,7 @@
                 this_month: thisMonth,
                 this_month_income: thisMonthIncome,
                 total_transactions: totalTransactions,
-                avg_transaction: Math.round(avgTransaction),
+                avg_daily_spend: Math.round(avgDailySpend),
                 top_category: topCategory,
                 categories: catBreakdown,
                 accounts: accBreakdown,
@@ -955,7 +954,7 @@
                             { label: 'Spent', value: fmt(data.this_month) },
                             { label: 'Income', value: fmt(data.this_month_income) },
                             { label: 'Txns', value: String(data.total_transactions || 0).padStart(4, '0') },
-                            { label: 'Avg', value: fmt(data.avg_transaction) },
+                            { label: 'Avg/Day', value: fmt(data.avg_daily_spend) },
                         ].map(s => (
                             <div key={s.label} className="card-95 p-3">
                                 <span className="label-95 !text-win95-dark mb-1">{s.label}</span>

@@ -5,6 +5,7 @@ Open: http://localhost:8000
 """
 
 import os
+import calendar
 from datetime import datetime, date
 from typing import Optional
 
@@ -469,12 +470,8 @@ def dashboard():
         row = conn.execute("SELECT COUNT(*) as cnt FROM transactions").fetchone()
         total_transactions = int(row["cnt"])
 
-        row = conn.execute(
-            "SELECT COALESCE(AVG(amount), 0) as avg_amt FROM transactions WHERE date >= ? AND date <= ?",
-            (month_start, month_end),
-        ).fetchone()
-        avg_val = row["avg_amt"]
-        avg_transaction = float(avg_val) if avg_val else 0
+        days_in_month = calendar.monthrange(now.year, now.month)[1]
+        avg_daily_spend = (this_month - this_month_income) / days_in_month if days_in_month > 0 else 0
 
         categories = conn.execute(
             """
@@ -531,7 +528,7 @@ def dashboard():
             "this_month": this_month,
             "this_month_income": this_month_income,
             "total_transactions": total_transactions,
-            "avg_transaction": round(float(avg_transaction), 2),
+            "avg_daily_spend": round(float(avg_daily_spend), 2),
             "top_category": top_cat,
             "categories": rows_to_list(categories),
             "accounts": rows_to_list(accounts),
