@@ -845,15 +845,16 @@
             return <div style={{height: height || '140px'}}><canvas ref={ref} /></div>;
         }
 
-        function BarChart({ labels, data, color, onBarClick }) {
+        function BarChart({ labels, data, color, colors, onBarClick }) {
             const ref = useRef(null);
             const chart = useRef(null);
             useEffect(() => {
                 if (chart.current) chart.current.destroy();
                 if (!ref.current || !data.length) return;
+                const bgColors = colors || data.map(() => color);
                 chart.current = new Chart(ref.current, {
                     type: 'bar',
-                    data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 0, barThickness: 16 }] },
+                    data: { labels, datasets: [{ data, backgroundColor: bgColors, borderRadius: 0, barThickness: 16 }] },
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
@@ -980,7 +981,7 @@
                                 <BarChart
                                     labels={(data.monthly || []).map(m => { const [y,mo] = m.month.split('-'); return new Date(y,mo-1).toLocaleString('en',{month:'short'}); })}
                                     data={(data.monthly || []).map(m => m.expenses)}
-                                    color="#9333EA"
+                                    colors={['#FF0000','#9333EA','#0000FF','#00AA00','#FF6600','#000000']}
                                     onBarClick={(idx) => {
                                         const monthStr = (data.monthly || [])[idx]?.month;
                                         if (monthStr && setMonthFilter && setPage) {
@@ -1511,7 +1512,7 @@
             const [form, setForm] = useState({ name: '', icon: '📦', budget: 0 });
             const [toast, setToast] = useState(null);
             const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
-            const ICONS = ['📦','🍔','🚗','🛒','💡','🎬','💊','📚','✈️','🥬','🧴','📱','🏠','💰','🎮','☕','🛣️','❤️'];
+            const ICONS = ['📦','🍔','🚗','🛒','💡','🎬','💊','📚','✈️','🥬','🧴','📱','🏠','💰','🎮','☕','🛣️','❤️','🎵','🏋️','🐾','🎁','👶','🔧','📸','🎯','🍺','🍰','🍜','🌮','🍕','🥗','🎂','💳','💎','🧸','💻','🧹','👔','👟','🧢','👜','🕶️','⌚','💍','🎸','🎨','📷','🎥','📺','🎤','🎧','🎲','⚽','🏀','🎾','🏊','🚴','🧘','🏖️','🚀','⛽','🏥','🏫','⛪','⛽','🧃','🧊'];
 
             const openAdd = () => { setEditing(null); setForm({ name: '', icon: '📦', budget: 0 }); setShowForm(true); };
             const openEdit = (c) => { setEditing(c); setForm({ name: c.name, icon: c.icon || '📦', budget: c.budget || 0 }); setShowForm(true); };
