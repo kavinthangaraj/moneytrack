@@ -875,6 +875,7 @@
             { id: 'dashboard', label: 'Overview' },
             { id: 'transactions', label: 'Transactions' },
             { id: 'sms', label: 'SMS Import' },
+            { id: 'upload', label: 'Upload' },
             { id: 'accounts', label: 'Accounts' },
             { id: 'categories', label: 'Categories' },
         ];
@@ -1558,6 +1559,237 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
+        // Statement Upload Page
+        // ═══════════════════════════════════════════════════════════════
+        function StatementUpload({ accounts, categories, onReload }) {
+            const [uploading, setUploading] = useState(false);
+            const [parsed, setParsed] = useState(null);
+            const [filename, setFilename] = useState('');
+            const [selected, setSelected] = useState({});
+            const [edits, setEdits] = useState({});
+            const [accountId, setAccountId] = useState('');
+            const [saving, setSaving] = useState(false);
+            const [savedCount, setSavedCount] = useState(0);
+            const [toast, setToast] = useState(null);
+            const fileRef = useRef(null);
+            const dropRef = useRef(null);
+
+            const handleUpload = async (file) => {
+                if (!file) return;
+                setUploading(true);
+                setParsed(null);
+                setSavedCount(0);
+                setFilename(file.name);
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    const res = await fetch(`${API_BASE}/api/statements/upload`, { method: 'POST', body: formData });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.detail || 'Upload failed');
+                    }
+                    const data = await res.json();
+                    const txns = data.transactions || [];
+                    setParsed(txns);
+                    // Select all by default
+                    const sel = {};
+                    const ed = {};
+                    txns.forEach((t, i) => {
+                        sel[i] = true;
+                        ed[i] = { category: t.category || 'Other' };
+                    });
+                    setSelected(sel);
+                    setEdits(ed);
+                } catch (e) {
+                    setToast({ message: e.message || 'Failed to parse statement', type: 'error' });
+                }
+                setUploading(false);
+            };
+
+            const handleDrop = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const file = e.dataTransfer?.files?.[0];
+                if (file) handleUpload(file);
+            };
+
+            const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
+
+            const toggleSelect = (i) => setSelected(p => ({ ...p, [i]: !p[i] }));
+            const selectAll = (val) => {
+                const sel = {};
+                parsed.forEach((_, i) => { sel[i] = val; });
+                setSelected(sel);
+            };
+
+            const updateCategory = (i, catName) => {
+                setEdits(p => ({ ...p, [i]: { ...p[i], category: catName } }));
+            };
+
+            const handleSave = async () => {
+                if (!accountId) { setToast({ message: 'Select an account first', type: 'error' }); return; }
+                const toSave = parsed.filter((_, i) => selected[i]);
+                if (toSave.length === 0) { setToast({ message: 'No transactions selected', type: 'error' }); return; }
+
+                setSaving(true);
+                let ok = 0;
+                let fail = 0;
+                for (const [i, t] of parsed.entries()) {
+                    if (!selected[i]) continue;
+                    const catName = edits[i]?.category || t.category || 'Other';
+                    const cat = categories.find(c => c.name === catName);
+                    try {
+                        await api.post(`${API_BASE}/api/transactions`, {
+                            amount: t.amount,
+                            merchant: t.merchant || '',
+                            date: t.date,
+                            category_id: cat ? cat.id : null,
+                            account_id: Number(accountId),
+                            type: 'expense',
+                            description: t.merchant || '',
+                        }, 'transactions');
+                        ok++;
+                    } catch { fail++; }
+                }
+                setSaving(false);
+                setSavedCount(ok);
+                setToast({ message: `Saved ${ok} transaction${ok !== 1 ? 's' : ''}${fail ? `, ${fail} failed` : ''}`, type: ok > 0 ? 'ok' : 'error' });
+                if (ok > 0) onReload();
+            };
+
+            const reset = () => {
+                setParsed(null);
+                setFilename('');
+                setSelected({});
+                setEdits({});
+                setAccountId('');
+                setSavedCount(0);
+                if (fileRef.current) fileRef.current.value = '';
+            };
+
+            const selectedCount = Object.values(selected).filter(Boolean).length;
+            const selectedTotal = parsed ? parsed.filter((_, i) => selected[i]).reduce((s, t) => s + t.amount, 0) : 0;
+
+            return (
+                <div className="p-3 md:p-6 space-y-4 fade-in pt-16 md:pt-8 safe-top">
+                    {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+                    <div className="px-2 pb-2 divider-95">
+                        <h2 className="text-base font-bold uppercase tracking-wider" style={{textShadow: '1px 1px 0 #808080'}}>Upload Statement</h2>
+                        <p className="text-xs font-bold uppercase tracking-wider text-win95-dark mt-1">Upload a credit card statement PDF or image.</p>
+                    </div>
+
+                    {!parsed ? (
+                        <div className="card-95 p-4">
+                            <div ref={dropRef}
+                                onDrop={handleDrop}
+                                onDragOver={handleDragOver}
+                                onClick={() => fileRef.current?.click()}
+                                className="border-2 border-dashed border-win95-dark p-8 text-center cursor-pointer hover:bg-win95-bg transition-colors"
+                                style={{ background: '#d4d0c8' }}>
+                                <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg"
+                                    className="hidden" onChange={e => handleUpload(e.target.files?.[0])} />
+                                {uploading ? (
+                                    <div>
+                                        <p className="font-bold uppercase text-sm">Parsing statement...</p>
+                                        <p className="text-xs text-win95-dark mt-2">Extracting transactions from {filename}</p>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <p className="text-3xl mb-2">📄</p>
+                                        <p className="font-bold uppercase text-sm">Drop PDF or image here</p>
+                                        <p className="text-xs text-win95-dark mt-1">or click to browse · .pdf, .png, .jpg · max 10MB</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {/* Summary bar */}
+                            <div className="card-95 p-3 flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-3">
+                                    <span className="label-95">{filename}</span>
+                                    <span className="font-mono text-sm font-bold">{parsed.length} transactions found</span>
+                                </div>
+                                <button onClick={reset} className="btn-95 text-xs">New Upload</button>
+                            </div>
+
+                            {/* Account selector + bulk actions */}
+                            <div className="card-95 p-3 flex flex-wrap items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="label-95">Account:</span>
+                                    <select value={accountId} onChange={e => setAccountId(e.target.value)}
+                                        className="input-95 text-xs">
+                                        <option value="">Select account...</option>
+                                        {accounts.filter(a => a.type === 'credit_card').map(a => (
+                                            <option key={a.id} value={a.id}>{a.name}{a.last_four ? ` ••${a.last_four}` : ''}</option>
+                                        ))}
+                                        {accounts.filter(a => a.type !== 'credit_card').map(a => (
+                                            <option key={a.id} value={a.id}>{a.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex items-center gap-2 ml-auto">
+                                    <button onClick={() => selectAll(true)} className="btn-95 text-xs">Select All</button>
+                                    <button onClick={() => selectAll(false)} className="btn-95 text-xs">Deselect All</button>
+                                </div>
+                            </div>
+
+                            {/* Transaction table */}
+                            <div className="card-95 overflow-x-auto">
+                                <table className="w-full text-xs">
+                                    <thead>
+                                        <tr className="bg-win95-bg">
+                                            <th className="p-2 text-left w-8">
+                                                <input type="checkbox" checked={parsed.length > 0 && selectedCount === parsed.length}
+                                                    onChange={e => selectAll(e.target.checked)} />
+                                            </th>
+                                            <th className="p-2 text-left uppercase">Date</th>
+                                            <th className="p-2 text-left uppercase">Merchant</th>
+                                            <th className="p-2 text-right uppercase">Amount</th>
+                                            <th className="p-2 text-left uppercase">Category</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {parsed.map((t, i) => (
+                                            <tr key={i} className={`border-t border-win95-border ${selected[i] ? '' : 'opacity-40'}`}>
+                                                <td className="p-2">
+                                                    <input type="checkbox" checked={!!selected[i]} onChange={() => toggleSelect(i)} />
+                                                </td>
+                                                <td className="p-2 font-mono whitespace-nowrap">{t.date}</td>
+                                                <td className="p-2 max-w-[200px] truncate">{t.merchant || '—'}</td>
+                                                <td className="p-2 text-right font-mono font-bold">{fmt(t.amount)}</td>
+                                                <td className="p-2">
+                                                    <select value={edits[i]?.category || t.category || 'Other'}
+                                                        onChange={e => updateCategory(i, e.target.value)}
+                                                        className="input-95 text-xs w-full">
+                                                        {categories.map(c => (
+                                                            <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                                        ))}
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Save bar */}
+                            <div className="card-95 p-3 flex flex-wrap items-center justify-between gap-2">
+                                <span className="font-mono text-sm font-bold">
+                                    {selectedCount} selected · {fmt(selectedTotal)}
+                                </span>
+                                <button onClick={handleSave} disabled={saving || selectedCount === 0}
+                                    className="btn-95 btn-95-purple disabled:opacity-30">
+                                    {saving ? 'Saving...' : `Save ${selectedCount} Transaction${selectedCount !== 1 ? 's' : ''}`}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // ═══════════════════════════════════════════════════════════════
         // App Root
         // ═══════════════════════════════════════════════════════════════
         function App() {
@@ -1689,6 +1921,7 @@
                             {page === 'dashboard' && <Dashboard />}
                             {page === 'transactions' && <Transactions accounts={accounts} categories={categories} onReload={reloadAccounts} />}
                             {page === 'sms' && <SmsParser accounts={accounts} categories={categories} onReload={reloadAccounts} />}
+                            {page === 'upload' && <StatementUpload accounts={accounts} categories={categories} onReload={reloadAccounts} />}
                             {page === 'accounts' && <Accounts accounts={accounts} onReload={reloadAccounts} />}
                             {page === 'categories' && <Categories categories={categories} onReload={reloadCategories} />}
                         </main>

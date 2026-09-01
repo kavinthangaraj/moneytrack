@@ -9,7 +9,10 @@ import calendar
 from datetime import datetime, date
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Query
+import tempfile
+import os as _os
+
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -18,6 +21,7 @@ from decimal import Decimal
 
 from database import get_db, init_db
 from sms_parser import parse_sms
+from statement_parser import parse_statement
 
 # ─── App Setup ─────────────────────────────────────────────────
 
@@ -443,6 +447,54 @@ def parse_sms_endpoint(data: SmsParseRequest):
     if result is None:
         raise HTTPException(400, "Could not parse SMS")
     return result
+
+
+# ─── Statement Upload ─────────────────────────────────────────
+
+
+ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+@app.post("/api/statements/upload")
+async def upload_statement(file: UploadFile = File(...)):
+    # Validate extension
+    ext = _os.path.splitext(file.filename or "")[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(400, f"Unsupported file type: {ext}. Allowed: .pdf, .png, .jpg, .jpeg")
+
+    # Read and validate size
+    contents = await file.read()
+    if len(contents) == 0:
+        raise HTTPException(400, "Empty file uploaded")
+    if len(contents) > MAX_FILE_SIZE:
+        raise HTTPException(400, f"File too large. Maximum size is 10MB")
+
+    # Save to temp file and parse
+    tmp = None
+    try:
+        suffix = ext
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+        tmp.write(contents)
+        tmp.close()
+
+        transactions = parse_statement(tmp.name)
+
+        if not transactions:
+            raise HTTPException(400, "No transactions found in the uploaded statement. The file may be empty, corrupted, or use an unsupported format.")
+
+        return {
+            "filename": file.filename,
+            "count": len(transactions),
+            "transactions": transactions,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Failed to parse statement: {str(e)}")
+    finally:
+        if tmp and _os.path.exists(tmp.name):
+            _os.unlink(tmp.name)
 
 
 # ─── Dashboard ─────────────────────────────────────────────────
