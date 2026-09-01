@@ -234,14 +234,101 @@ def parse_statement_line(line):
 # ─── Main Parser ──────────────────────────────────────────────
 
 
+
+def parse_markdown_table_line(line):
+    """
+    Parse a markdown table row like: | 18/08/2026 | SWIGGY | Rs.450.00 |
+    Returns {date, merchant, amount, category, raw_line} or None.
+    """
+    if not line or '|' not in line:
+        return None
+    # Skip header/separator rows
+    stripped = line.strip()
+    if stripped.startswith('|--') or stripped.startswith('| --') or stripped.startswith('| :'):
+        return None
+    if '---' in stripped and 'date' not in stripped.lower():
+        return None
+
+    cells = [c.strip() for c in stripped.split('|')]
+    # Remove empty leading/trailing cells from | ... | split
+    cells = [c for c in cells if c]
+
+    if len(cells) < 2:
+        return None
+
+    # Try to find date, merchant, amount from cells
+    date_str = None
+    merchant = None
+    amount = None
+
+    for i, cell in enumerate(cells):
+        # Try as date
+        if not date_str:
+            d = parse_date(cell)
+            if d:
+                date_str = d
+                continue
+        # Try as amount
+        amt_match = re.search(r'(?:Rs\.?|INR|₹)\s*([\d,]+\.?\d*)', cell, re.IGNORECASE)
+        if amt_match:
+            amount = parse_amount(amt_match.group(1))
+            continue
+        # Try plain number as amount (if > 10, likely a transaction amount)
+        if not amount:
+            plain = cell.replace(',', '').strip()
+            try:
+                val = float(plain)
+                if val > 0:
+                    amount = val
+                    continue
+            except ValueError:
+                pass
+        # Otherwise it's probably the merchant/description
+        if not merchant and len(cell) > 1:
+            merchant = cell
+
+    if date_str and amount and amount > 0:
+        category = guess_category(merchant) if merchant else "Other"
+        return {
+            "date": date_str,
+            "merchant": merchant or "",
+            "amount": amount,
+            "category": category,
+            "raw_line": stripped,
+        }
+    return None
+
+
 def parse_statement(file_path, password=None):
     """
-    Parse an Indian credit card statement (PDF or image).
+    Parse an Indian credit card statement (PDF, image, or markdown).
     Returns a list of dicts: [{date, merchant, amount, category, raw_line}]
     Raises ValueError if PDF is encrypted and no/wrong password provided.
     """
     import sys
     ext = os.path.splitext(file_path)[1].lower()
+
+    # Markdown files — read directly, no PDF extraction needed
+    if ext == ".md":
+        with open(file_path, "r", encoding="utf-8") as f:
+            text = f.read()
+        if not text or len(text.strip()) < 5:
+            return []
+        transactions = []
+        seen = set()
+        for line in text.split("\n"):
+            # Try markdown table row first
+            result = parse_markdown_table_line(line)
+            if not result:
+                # Fall back to plain text line parsing
+                result = parse_statement_line(line)
+            if result:
+                key = (result["date"], result["amount"], result["merchant"])
+                if key not in seen:
+                    seen.add(key)
+                    transactions.append(result)
+        return transactions
+
     if ext not in (".pdf", ".png", ".jpg", ".jpeg"):
         return []
 

@@ -1703,7 +1703,7 @@
                                 onClick={() => fileRef.current?.click()}
                                 className="border-2 border-dashed border-win95-dark p-8 text-center cursor-pointer hover:bg-win95-bg transition-colors"
                                 style={{ background: '#d4d0c8' }}>
-                                <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg"
+                                <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.md"
                                     className="hidden" onChange={e => handleUpload(e.target.files?.[0])} />
                                 {uploading ? (
                                     <div>
@@ -1727,7 +1727,7 @@
                                     <div>
                                         <p className="text-3xl mb-2">📄</p>
                                         <p className="font-bold uppercase text-sm">Drop PDF or image here</p>
-                                        <p className="text-xs text-win95-dark mt-1">or click to browse · .pdf, .png, .jpg · max 10MB</p>
+                                        <p className="text-xs text-win95-dark mt-1">or click to browse · .pdf, .png, .jpg, .md · max 10MB</p>
                                     </div>
                                 )}
                             </div>

@@ -452,7 +452,7 @@ def parse_sms_endpoint(data: SmsParseRequest):
 # ─── Statement Upload ─────────────────────────────────────────
 
 
-ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
+ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".md"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
