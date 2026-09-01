@@ -68,11 +68,18 @@ def guess_category(merchant_name):
 # ─── Text Extraction ─────────────────────────────────────────
 
 
-def extract_text_pymupdf(file_path):
-    """Extract text from a text-based PDF using pymupdf (fitz)."""
+def extract_text_pymupdf(file_path, password=None):
+    """Extract text from a text-based PDF using pymupdf (fitz). Supports password-protected PDFs."""
     try:
         import fitz
         doc = fitz.open(file_path)
+        if doc.is_encrypted:
+            if not password:
+                doc.close()
+                return "__ENCRYPTED__"
+            if not doc.authenticate(password):
+                doc.close()
+                return "__WRONG_PASSWORD__"
         text_parts = []
         for page in doc:
             text_parts.append(page.get_text())
@@ -82,7 +89,7 @@ def extract_text_pymupdf(file_path):
         return ""
 
 
-def extract_text_ocr(file_path):
+def extract_text_ocr(file_path, password=None):
     """Extract text from scanned PDF or image using pytesseract."""
     try:
         import pytesseract
@@ -92,6 +99,13 @@ def extract_text_ocr(file_path):
         # Check if it's a PDF — convert pages to images first
         if file_path.lower().endswith(".pdf"):
             doc = fitz.open(file_path)
+            if doc.is_encrypted:
+                if not password:
+                    doc.close()
+                    return "__ENCRYPTED__"
+                if not doc.authenticate(password):
+                    doc.close()
+                    return "__WRONG_PASSWORD__"
             text_parts = []
             for page_num in range(len(doc)):
                 page = doc[page_num]
@@ -109,15 +123,17 @@ def extract_text_ocr(file_path):
         return ""
 
 
-def extract_text(file_path):
+def extract_text(file_path, password=None):
     """Extract text from PDF or image. Try pymupdf first, fall back to OCR."""
     ext = os.path.splitext(file_path)[1].lower()
 
     if ext == ".pdf":
-        text = extract_text_pymupdf(file_path)
+        text = extract_text_pymupdf(file_path, password)
+        if text in ("__ENCRYPTED__", "__WRONG_PASSWORD__"):
+            return text
         # If very little text extracted, try OCR fallback
         if len(text.strip()) < 50:
-            text = extract_text_ocr(file_path)
+            text = extract_text_ocr(file_path, password)
         return text
     elif ext in (".png", ".jpg", ".jpeg"):
         return extract_text_ocr(file_path)
@@ -218,16 +234,21 @@ def parse_statement_line(line):
 # ─── Main Parser ──────────────────────────────────────────────
 
 
-def parse_statement(file_path):
+def parse_statement(file_path, password=None):
     """
     Parse an Indian credit card statement (PDF or image).
     Returns a list of dicts: [{date, merchant, amount, category, raw_line}]
+    Raises ValueError if PDF is encrypted and no/wrong password provided.
     """
     ext = os.path.splitext(file_path)[1].lower()
     if ext not in (".pdf", ".png", ".jpg", ".jpeg"):
         return []
 
-    text = extract_text(file_path)
+    text = extract_text(file_path, password)
+    if text == "__ENCRYPTED__":
+        raise ValueError("PDF is password-protected. Please provide the password.")
+    if text == "__WRONG_PASSWORD__":
+        raise ValueError("Incorrect PDF password. Please try again.")
     if not text or len(text.strip()) < 10:
         return []
 

@@ -457,7 +457,7 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
 @app.post("/api/statements/upload")
-async def upload_statement(file: UploadFile = File(...)):
+async def upload_statement(file: UploadFile = File(...), password: Optional[str] = File(None)):
     # Validate extension
     ext = _os.path.splitext(file.filename or "")[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
@@ -478,7 +478,7 @@ async def upload_statement(file: UploadFile = File(...)):
         tmp.write(contents)
         tmp.close()
 
-        transactions = parse_statement(tmp.name)
+        transactions = parse_statement(tmp.name, password=password or None)
 
         if not transactions:
             raise HTTPException(400, "No transactions found in the uploaded statement. The file may be empty, corrupted, or use an unsupported format.")
@@ -488,6 +488,9 @@ async def upload_statement(file: UploadFile = File(...)):
             "count": len(transactions),
             "transactions": transactions,
         }
+    except ValueError as e:
+        # Password-related errors from parser
+        raise HTTPException(400, str(e))
     except HTTPException:
         raise
     except Exception as e:
