@@ -246,7 +246,7 @@ def parse_statement(file_path, password=None):
         return []
 
     text = extract_text(file_path, password)
-    print(f"[statement_parser] extract_text returned {len(text) if text else 0} chars, preview: {repr(text[:200]) if text else 'EMPTY'}", file=sys.stderr)
+    print(f"[statement_parser] extract_text returned {len(text) if text else 0} chars, FULL TEXT:\n{text[:3000]}", file=sys.stderr)
     if text == "__ENCRYPTED__":
         raise ValueError("PDF is password-protected. Please provide the password.")
     if text == "__WRONG_PASSWORD__":
