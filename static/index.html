@@ -845,7 +845,7 @@
             return <div style={{height: height || '140px'}}><canvas ref={ref} /></div>;
         }
 
-        function BarChart({ labels, data, color }) {
+        function BarChart({ labels, data, color, onBarClick }) {
             const ref = useRef(null);
             const chart = useRef(null);
             useEffect(() => {
@@ -857,6 +857,14 @@
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
+                        onClick: (evt) => {
+                            if (!onBarClick || !chart.current) return;
+                            const points = chart.current.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
+                            if (points.length > 0) {
+                                const idx = points[0].index;
+                                onBarClick(idx, labels[idx]);
+                            }
+                        },
                         scales: {
                             x: { grid: { display: false, color: '#000000' }, border: { display: true, color: '#000000' }, ticks: { color: '#000000', font: { size: 9 } } },
                             y: { grid: { color: '#808080' }, border: { display: true, color: '#000000' }, ticks: { color: '#000000', font: { size: 9 }, callback: v => v >= 1000 ? (v/1000)+'k' : v } }
@@ -865,7 +873,7 @@
                 });
                 return () => { if (chart.current) chart.current.destroy(); };
             }, [data]);
-            return <div style={{height: '140px'}}><canvas ref={ref} /></div>;
+            return <div style={{height: '140px', cursor: onBarClick ? 'pointer' : 'default'}}><canvas ref={ref} /></div>;
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -928,7 +936,7 @@
         // ═══════════════════════════════════════════════════════════════
         // Dashboard
         // ═══════════════════════════════════════════════════════════════
-        function Dashboard() {
+        function Dashboard({ setPage, setMonthFilter }) {
             const [data, setData] = useState(null);
             useEffect(() => { api.getDashboard().then(setData).catch(() => {}); }, []);
 
@@ -973,6 +981,13 @@
                                     labels={(data.monthly || []).map(m => { const [y,mo] = m.month.split('-'); return new Date(y,mo-1).toLocaleString('en',{month:'short'}); })}
                                     data={(data.monthly || []).map(m => m.expenses)}
                                     color="#9333EA"
+                                    onBarClick={(idx) => {
+                                        const monthStr = (data.monthly || [])[idx]?.month;
+                                        if (monthStr && setMonthFilter && setPage) {
+                                            setMonthFilter(monthStr);
+                                            setPage('transactions');
+                                        }
+                                    }}
                                 />
                             </div>
                         )}
@@ -1113,14 +1128,28 @@
         // ═══════════════════════════════════════════════════════════════
         // Transactions Page
         // ═══════════════════════════════════════════════════════════════
-        function Transactions({ accounts, categories, onReload }) {
+        function Transactions({ accounts, categories, onReload, monthFilter, setMonthFilter }) {
             const [txs, setTxs] = useState([]);
             const [total, setTotal] = useState(0);
             const [showForm, setShowForm] = useState(false);
             const [editing, setEditing] = useState(null);
             const [toast, setToast] = useState(null);
             const [showFilters, setShowFilters] = useState(false);
-            const [f, setF] = useState({ start_date: thisMonthStart(), end_date: today(), category_id: '', account_id: '', tx_type: '', search: '' });
+            const [f, setF] = useState(() => {
+                if (monthFilter) {
+                    const [y, mo] = monthFilter.split('-');
+                    const lastDay = new Date(y, mo, 0).getDate();
+                    return { start_date: `${monthFilter}-01`, end_date: `${monthFilter}-${String(lastDay).padStart(2,'0')}`, category_id: '', account_id: '', tx_type: '', search: '' };
+                }
+                return { start_date: thisMonthStart(), end_date: today(), category_id: '', account_id: '', tx_type: '', search: '' };
+            });
+
+            // Clear monthFilter after consuming it
+            useEffect(() => {
+                if (monthFilter && setMonthFilter) {
+                    setMonthFilter(null);
+                }
+            }, []);
 
             const load = async () => {
                 const p = new URLSearchParams();
@@ -1827,6 +1856,7 @@
             const [accounts, setAccounts] = useState([]);
             const [categories, setCategories] = useState([]);
             const [sidebarOpen, setSidebarOpen] = useState(false);
+            const [monthFilter, setMonthFilter] = useState(null);
             const [syncStatus, setSyncStatus] = useState('synced');
             const [pendingCount, setPendingCount] = useState(0);
             const [dbReady, setDbReady] = useState(false);
@@ -1948,8 +1978,8 @@
                         <MobileHeader onMenuClick={() => setSidebarOpen(true)} page={page} />
                         <main className="flex-1 md:ml-56" style={{background: '#c0c0c0'}}>
                             <SyncIndicator />
-                            {page === 'dashboard' && <Dashboard />}
-                            {page === 'transactions' && <Transactions accounts={accounts} categories={categories} onReload={reloadAccounts} />}
+                            {page === 'dashboard' && <Dashboard setPage={setPage} setMonthFilter={setMonthFilter} />}
+                            {page === 'transactions' && <Transactions accounts={accounts} categories={categories} onReload={reloadAccounts} monthFilter={monthFilter} setMonthFilter={setMonthFilter} />}
                             {page === 'sms' && <SmsParser accounts={accounts} categories={categories} onReload={reloadAccounts} />}
                             {page === 'upload' && <StatementUpload accounts={accounts} categories={categories} onReload={reloadAccounts} />}
                             {page === 'accounts' && <Accounts accounts={accounts} onReload={reloadAccounts} />}
