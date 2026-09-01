@@ -507,7 +507,8 @@ async def upload_statement(file: UploadFile = File(...), password: Optional[str]
 def dashboard():
     now = datetime.now()
     month_start = now.strftime("%Y-%m-01")
-    month_end = now.strftime("%Y-%m-31")
+    _, last_day = calendar.monthrange(now.year, now.month)
+    month_end = now.strftime(f"%Y-%m-{last_day:02d}")
 
     with get_db() as conn:
         row = conn.execute(

@@ -69,10 +69,10 @@ def guess_category(merchant_name):
 
 
 def extract_text_pymupdf(file_path, password=None):
-    """Extract text from a text-based PDF using pymupdf (fitz). Supports password-protected PDFs."""
+    """Extract text from a text-based PDF using pymupdf. Supports password-protected PDFs."""
     try:
-        import fitz
-        doc = fitz.open(file_path)
+        import pymupdf
+        doc = pymupdf.open(file_path)
         if doc.is_encrypted:
             if not password:
                 doc.close()
@@ -85,7 +85,7 @@ def extract_text_pymupdf(file_path, password=None):
             text_parts.append(page.get_text())
         doc.close()
         return "\n".join(text_parts)
-    except Exception:
+    except Exception as e:
         return ""
 
 
@@ -94,11 +94,11 @@ def extract_text_ocr(file_path, password=None):
     try:
         import pytesseract
         from PIL import Image
-        import fitz
+        import pymupdf
 
         # Check if it's a PDF — convert pages to images first
         if file_path.lower().endswith(".pdf"):
-            doc = fitz.open(file_path)
+            doc = pymupdf.open(file_path)
             if doc.is_encrypted:
                 if not password:
                     doc.close()
@@ -240,11 +240,13 @@ def parse_statement(file_path, password=None):
     Returns a list of dicts: [{date, merchant, amount, category, raw_line}]
     Raises ValueError if PDF is encrypted and no/wrong password provided.
     """
+    import sys
     ext = os.path.splitext(file_path)[1].lower()
     if ext not in (".pdf", ".png", ".jpg", ".jpeg"):
         return []
 
     text = extract_text(file_path, password)
+    print(f"[statement_parser] extract_text returned {len(text) if text else 0} chars, preview: {repr(text[:200]) if text else 'EMPTY'}", file=sys.stderr)
     if text == "__ENCRYPTED__":
         raise ValueError("PDF is password-protected. Please provide the password.")
     if text == "__WRONG_PASSWORD__":
