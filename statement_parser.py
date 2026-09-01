@@ -268,6 +268,9 @@ def parse_markdown_table_line(line):
             if d:
                 date_str = d
                 continue
+        # Skip time cells (HH:MM or HH:MM:SS)
+        if re.match(r'^\d{1,2}:\d{2}(:\d{2})?$', cell.strip()):
+            continue
         # Try as amount
         amt_match = re.search(r'(?:Rs\.?|INR|₹)\s*([\d,]+\.?\d*)', cell, re.IGNORECASE)
         if amt_match:
@@ -278,14 +281,17 @@ def parse_markdown_table_line(line):
             plain = cell.replace(',', '').strip()
             try:
                 val = float(plain)
-                if val > 0:
+                if val > 10:
                     amount = val
                     continue
             except ValueError:
                 pass
-        # Otherwise it's probably the merchant/description
-        if not merchant and len(cell) > 1:
-            merchant = cell
+        # Skip very short cells (card digits, refs, single chars)
+        if len(cell.strip()) <= 2:
+            continue
+        # Otherwise it's probably the merchant/description — pick the longest one
+        if not merchant or len(cell.strip()) > len(merchant):
+            merchant = cell.strip()
 
     if date_str and amount and amount > 0:
         category = guess_category(merchant) if merchant else "Other"
