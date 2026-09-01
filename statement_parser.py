@@ -257,7 +257,7 @@ def parse_statement(file_path, password=None):
     transactions = []
     seen = set()
 
-    for line in text.split("\n"):
+    for i, line in enumerate(text.split("\n")):
         result = parse_statement_line(line)
         if result:
             # Deduplicate by date + amount + merchant
@@ -265,5 +265,11 @@ def parse_statement(file_path, password=None):
             if key not in seen:
                 seen.add(key)
                 transactions.append(result)
+        elif line.strip() and len(line.strip()) > 3:
+            # Log lines that look like they might be transactions but weren't parsed
+            stripped = line.strip()
+            if any(c.isdigit() for c in stripped) and ("Rs" in stripped or "INR" in stripped or "₹" in stripped or len(stripped) > 15):
+                print(f"[statement_parser] UNPARSED line {i}: {repr(stripped[:150])}", file=sys.stderr)
 
+    print(f"[statement_parser] found {len(transactions)} transactions", file=sys.stderr)
     return transactions
