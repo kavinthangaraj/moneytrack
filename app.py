@@ -6,7 +6,7 @@ Open: http://localhost:8000
 
 import os
 import calendar
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Optional
 
 import tempfile
@@ -580,11 +580,29 @@ def dashboard():
             """
         ).fetchall()
 
+        # Streak: consecutive days (backwards from today) with >=1 transaction
+        date_rows = conn.execute(
+            "SELECT DISTINCT \"date\" FROM transactions"
+        ).fetchall()
+        date_set = set()
+        for d in date_rows:
+            val = d["date"] if isinstance(d, dict) else d[0]
+            if val:
+                date_set.add(str(val)[:10])
+        streak_days = 0
+        day = date.today()
+        if day.isoformat() not in date_set:
+            day -= timedelta(days=1)
+        while day.isoformat() in date_set:
+            streak_days += 1
+            day -= timedelta(days=1)
+
         return {
             "this_month": this_month,
             "this_month_income": this_month_income,
             "total_transactions": total_transactions,
             "avg_daily_spend": round(float(avg_daily_spend), 2),
+            "streak_days": streak_days,
             "top_category": top_cat,
             "categories": rows_to_list(categories),
             "accounts": rows_to_list(accounts),

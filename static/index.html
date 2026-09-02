@@ -16,6 +16,7 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
@@ -269,17 +270,25 @@
             letter-spacing: 0.1em;
         }
 
-        /* Progress bar retro */
+        /* Pixel display font for headers/titles only */
+        .font-pixel {
+            font-family: 'Press Start 2P', 'MS Sans Serif', 'Courier New', monospace;
+            letter-spacing: 0.02em;
+        }
+
+        /* Progress bar retro — HP-bar style */
         .progress-95-track {
             background: #FFFFFF;
             border: 2px solid;
             border-color: #808080 #FFFFFF #FFFFFF #808080;
-            height: 12px;
+            height: 14px;
             overflow: hidden;
+            box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.35);
         }
         .progress-95-fill {
             height: 100%;
             background: #9333EA;
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
         }
 
         /* Toast retro */
@@ -624,11 +633,27 @@
                 .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
                 .slice(0, 5);
 
+            // Streak: consecutive days (backwards from today) with >=1 transaction
+            const dateSet = new Set(transactions.map(t => (t.date || '').slice(0, 10)));
+            let streakDays = 0;
+            const cursor = new Date();
+            let cursorStr = cursor.toISOString().split('T')[0];
+            if (!dateSet.has(cursorStr)) {
+                cursor.setDate(cursor.getDate() - 1);
+                cursorStr = cursor.toISOString().split('T')[0];
+            }
+            while (dateSet.has(cursorStr)) {
+                streakDays++;
+                cursor.setDate(cursor.getDate() - 1);
+                cursorStr = cursor.toISOString().split('T')[0];
+            }
+
             return {
                 this_month: thisMonth,
                 this_month_income: thisMonthIncome,
                 total_transactions: totalTransactions,
                 avg_daily_spend: Math.round(avgDailySpend),
+                streak_days: streakDays,
                 top_category: topCategory,
                 categories: catBreakdown,
                 accounts: accBreakdown,
@@ -943,28 +968,45 @@
 
             if (!data) return <div className="p-5 md:p-8 text-xs font-bold uppercase tracking-wider text-win95-dark pt-16 md:pt-8">Loading Dashboard…</div>;
 
-            const COLORS = ['#FF0000','#000000','#9333EA','#0000FF','#00AA00','#FF6600','#FFFF00','#808080'];
-            const ACCOUNT_COLORS = ['#FF0000','#0000FF','#9333EA','#00AA00','#FF6600','#FFFF00','#000000','#808080'];
+            const COLORS = ['#9333EA','#0000FF','#000000','#808080','#0066CC','#663399','#444444','#9933FF'];
+            const ACCOUNT_COLORS = ['#9333EA','#0000FF','#000000','#808080','#0066CC','#663399','#444444','#9933FF'];
             const catLabels = (data.categories || []).map(c => c.name);
             const catData = (data.categories || []).map(c => c.total);
             const accLabels = (data.accounts || []).map(a => a.name);
             const accData = (data.accounts || []).map(a => a.total);
 
+            // On-track: how many budgeted categories are within budget this month
+            const budgeted = (data.categories || []).filter(c => Number(c.budget) > 0);
+            const onTrackCount = budgeted.filter(c => c.total <= c.budget).length;
+            const onTrackPct = budgeted.length ? onTrackCount / budgeted.length : 1;
+            const onTrackColor = budgeted.length === 0 ? '#808080'
+                : onTrackPct >= 0.7 ? '#00AA00'
+                : onTrackPct >= 0.4 ? '#FF6600'
+                : '#FF0000';
+
             return (
                 <div className="p-3 md:p-6 space-y-4 md:space-y-6 fade-in pt-16 md:pt-8 safe-top">
                     {/* Page title bar */}
-                    <div className="flex items-baseline justify-between px-2 pb-2 divider-95">
-                        <h2 className="text-base font-bold uppercase tracking-wider" style={{textShadow: '1px 1px 0 #808080'}}>Overview</h2>
-                        <span className="text-xs font-bold uppercase tracking-wider text-win95-dark">{new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
+                    <div className="flex items-center justify-between px-2 pb-2 divider-95 gap-2">
+                        <h2 className="font-pixel text-xs md:text-sm" style={{textShadow: '2px 2px 0 #808080'}}>OVERVIEW</h2>
+                        <div className="flex items-center gap-2">
+                            {budgeted.length > 0 && (
+                                <span className="badge-95 px-2 py-1" style={{color: onTrackColor}}>
+                                    {onTrackCount}/{budgeted.length} ON BUDGET
+                                </span>
+                            )}
+                            <span className="text-xs font-bold uppercase tracking-wider text-win95-dark">{new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
+                        </div>
                     </div>
 
                     {/* Stats - Hit-counter style */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                         {[
                             { label: 'Spent', value: fmt(data.this_month) },
                             { label: 'Income', value: fmt(data.this_month_income) },
                             { label: 'Txns', value: String(data.total_transactions || 0).padStart(4, '0') },
                             { label: 'Avg/Day', value: fmt(data.avg_daily_spend) },
+                            { label: 'Streak', value: `🔥 ${data.streak_days || 0}d` },
                         ].map(s => (
                             <div key={s.label} className="card-95 p-3">
                                 <span className="label-95 !text-win95-dark mb-1">{s.label}</span>
@@ -975,13 +1017,13 @@
 
                     {/* Monthly Trend + Categories */}
                     <div className="card-95 p-4">
-                        <span className="label-95">Monthly Trend</span>
+                        <span className="label-95 font-pixel !text-[10px]">MONTHLY TREND</span>
                         {(data.monthly || []).length > 0 && (
                             <div className="chart-95 mt-2">
                                 <BarChart
                                     labels={(data.monthly || []).map(m => { const [y,mo] = m.month.split('-'); return new Date(y,mo-1).toLocaleString('en',{month:'short'}); })}
                                     data={(data.monthly || []).map(m => m.expenses)}
-                                    colors={['#FF0000','#9333EA','#0000FF','#00AA00','#FF6600','#000000']}
+                                    colors={['#9333EA','#0000FF','#000000','#808080','#0066CC','#663399']}
                                     onBarClick={(idx) => {
                                         const monthStr = (data.monthly || [])[idx]?.month;
                                         if (monthStr && setMonthFilter && setPage) {
@@ -994,7 +1036,7 @@
                         )}
                         {catLabels.length > 0 && (
                             <div className="mt-4 pt-4 divider-95">
-                                <span className="label-95 mb-3">Categories</span>
+                                <span className="label-95 font-pixel !text-[10px] mb-3">CATEGORIES</span>
                                 <div className="space-y-2">
                                     {data.categories.slice(0, 6).map((c, i) => {
                                         const maxCat = Math.max(...data.categories.map(x => x.total));
@@ -1029,7 +1071,7 @@
                     {/* Accounts donut */}
                     {accLabels.length > 0 && (
                         <div className="card-95 p-4">
-                            <span className="label-95 mb-3">Accounts</span>
+                            <span className="label-95 font-pixel !text-[10px] mb-3">ACCOUNTS</span>
                             <div className="flex items-center gap-3 md:gap-6">
                                 <div className="w-20 h-20 md:w-28 md:h-28 shrink-0">
                                     <div className="chart-95">
