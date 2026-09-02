@@ -8,9 +8,12 @@ Personal expense tracker with offline-first PWA support. Runs locally with SQLit
 
 - **Manual entry** — log expenses, income, and transfers
 - **SMS parser** — paste Indian bank SMS messages, auto-extract amount, merchant, date, bank, and card/account details
+- **Statement upload** — upload credit card statement PDFs/images, auto-parse transactions, review and bulk-save. Supports password-protected PDFs.
 - **Category tracking** — 15 built-in categories with emoji icons, fully customizable
 - **Account-wise tracking** — credit cards, savings accounts, UPI, FASTag, wallets
 - **Dashboard** — monthly expense/income totals, category breakdown with charts, account breakdown, recent transactions
+- **Budget tracking** — set budgets per category, see progress bars with semantic colors (green/orange/red), "on budget" indicator
+- **Streak tracking** — consecutive days with logged transactions, displayed as a stat card
 - **Search & filter** — by date range, category, account, type, or keyword
 - **Offline-first PWA** — works without network; IndexedDB caches data locally with a sync queue for writes made offline
 - **Mobile-optimized** — bottom-sheet modals, safe-area padding, 16px inputs (no iOS zoom), installable as a home screen app
@@ -21,6 +24,15 @@ Supports transaction SMS from:
 - **Banks:** HDFC, ICICI, SBI, Axis, Kotak, Bank of Baroda, PNB, Canara, Yes Bank, Federal Bank, IndusInd, and more
 - **UPI apps:** Google Pay, PhonePe, Paytm, Amazon Pay, CRED, BHIM, WhatsApp Pay
 - **Auto-detects:** amount, merchant name, transaction date, bank, card/account last 4 digits, UPI app, and guesses expense category from merchant
+
+## Statement Upload
+
+Upload credit card statements (PDF or image) to bulk-import transactions:
+- **Text-based PDFs** — extracts text directly using PyMuPDF
+- **Scanned PDFs/images** — falls back to OCR via Tesseract
+- **Password-protected PDFs** — prompts for password, decrypts and parses
+- **Review UI** — select/deselect transactions, edit categories, choose account, then bulk-save
+- **Supported formats:** .pdf, .png, .jpg, .jpeg (max 10MB)
 
 ## Setup
 
@@ -56,6 +68,9 @@ Click **+ Add** in the sidebar or go to Transactions → fill the form → Save.
 ### SMS Parser
 Copy a bank SMS from your phone → paste it into the SMS Parser page → click **Parse** → review the extracted data → Save.
 
+### Statement Upload
+Go to Upload → drag-and-drop or browse for a PDF/image → review parsed transactions → select an account → save selected.
+
 ### PWA Install
 Open the deployed URL on your phone → tap "Add to Home Screen" for a native app-like experience.
 
@@ -65,6 +80,7 @@ Open the deployed URL on your phone → tap "Add to Home Screen" for a native ap
 - **Frontend:** React 18 (CDN), Tailwind CSS, Chart.js, Babel standalone
 - **Database:** SQLite (local) / PostgreSQL via Supabase (production)
 - **Offline layer:** IndexedDB with sync queue for write-ahead offline support
+- **Statement parsing:** PyMuPDF (PDF text extraction), pytesseract (OCR), Pillow (image processing)
 - **Deployment:** Fly.io (Singapore region), Dockerfile, auto-stop/start machines
 - **No build step** — single `index.html`, `python app.py` is all you need locally
 
@@ -72,9 +88,10 @@ Open the deployed URL on your phone → tap "Add to Home Screen" for a native ap
 
 ```
 moneytrack/
-├── app.py              # FastAPI backend — CRUD + dashboard + SMS parse endpoints
+├── app.py              # FastAPI backend — CRUD + dashboard + SMS/parse endpoints
 ├── database.py         # Dual-mode DB layer (SQLite / PostgreSQL with query translation)
 ├── sms_parser.py       # Indian bank SMS regex parser
+├── statement_parser.py # Credit card statement parser (PDF/image/OCR)
 ├── test_sms_parser.py  # Parser tests
 ├── requirements.txt    # Python deps
 ├── fly.toml            # Fly.io config
