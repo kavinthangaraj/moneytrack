@@ -652,6 +652,7 @@
                 this_month: thisMonth,
                 this_month_income: thisMonthIncome,
                 total_transactions: totalTransactions,
+                this_month_transactions: thisMonthTxs.length,
                 avg_daily_spend: Math.round(avgDailySpend),
                 streak_days: streakDays,
                 top_category: topCategory,
@@ -1004,7 +1005,7 @@
                         {[
                             { label: 'Spent', value: fmt(data.this_month) },
                             { label: 'Income', value: fmt(data.this_month_income) },
-                            { label: 'Txns', value: String(data.total_transactions || 0).padStart(4, '0') },
+                            { label: 'Txns', value: String(data.this_month_transactions || 0).padStart(4, '0') },
                             { label: 'Avg/Day', value: fmt(data.avg_daily_spend) },
                             { label: 'Streak', value: `🔥 ${data.streak_days || 0}d` },
                         ].map(s => (
