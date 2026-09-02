@@ -591,7 +591,7 @@
             });
             const catBreakdown = Object.entries(catMap).map(([catId, total]) => {
                 const cat = categories.find(c => String(c.id) === String(catId));
-                return { name: cat?.name || 'Uncategorized', total };
+                return { name: cat?.name || 'Uncategorized', icon: cat?.icon || '📦', budget: cat?.budget || 0, total };
             }).sort((a, b) => b.total - a.total);
 
             const topCategory = catBreakdown[0]?.name || '';
@@ -998,16 +998,25 @@
                                 <div className="space-y-2">
                                     {data.categories.slice(0, 6).map((c, i) => {
                                         const maxCat = Math.max(...data.categories.map(x => x.total));
-                                        const pct = maxCat > 0 ? (c.total / maxCat) * 100 : 0;
-                                        const CAT_COLORS = ['#FF0000','#000000','#9333EA','#0000FF','#00AA00','#FF6600'];
+                                        const hasBudget = c.budget > 0;
+                                        const pct = hasBudget
+                                            ? Math.min((c.total / c.budget) * 100, 100)
+                                            : (maxCat > 0 ? (c.total / maxCat) * 100 : 0);
+                                        const overBudget = hasBudget && c.total > c.budget;
+                                        const barColor = !hasBudget ? '#808080'
+                                            : overBudget ? '#FF0000'
+                                            : pct >= 70 ? '#FF6600'
+                                            : '#00AA00';
                                         return (
                                             <div key={c.name}>
                                                 <div className="flex justify-between mb-1">
                                                     <span className="text-xs font-bold uppercase tracking-wider text-win95-text">{c.icon} {c.name}</span>
-                                                    <span className="text-xs font-bold tabular-nums">{fmt(c.total)}</span>
+                                                    <span className={`text-xs font-bold tabular-nums ${overBudget ? 'text-win95-red' : ''}`}>
+                                                        {hasBudget ? `${fmt(c.total)} / ${fmt(c.budget)}` : fmt(c.total)}
+                                                    </span>
                                                 </div>
                                                 <div className="progress-95-track">
-                                                    <div className="progress-95-fill" style={{width: `${pct}%`, background: CAT_COLORS[i % CAT_COLORS.length]}} />
+                                                    <div className="progress-95-fill" style={{width: `${pct}%`, background: barColor}} />
                                                 </div>
                                             </div>
                                         );

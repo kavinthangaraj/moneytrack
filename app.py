@@ -531,11 +531,11 @@ def dashboard():
 
         categories = conn.execute(
             """
-            SELECT c.name, c.icon, COALESCE(SUM(t.amount), 0) as total, COUNT(t.id) as count
+            SELECT c.name, c.icon, c.budget, COALESCE(SUM(t.amount), 0) as total, COUNT(t.id) as count
             FROM categories c
             LEFT JOIN transactions t ON t.category_id = c.id AND t.date >= ? AND t.date <= ? AND t.type = 'expense'
-            GROUP BY c.id, c.name, c.icon
-            HAVING COALESCE(SUM(t.amount), 0) > 0
+            GROUP BY c.id, c.name, c.icon, c.budget
+            HAVING COALESCE(SUM(t.amount), 0) > 0 OR c.budget > 0
             ORDER BY total DESC
             """,
             (month_start, month_end),
