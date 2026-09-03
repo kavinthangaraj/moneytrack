@@ -23,6 +23,17 @@ from database import get_db, init_db
 from sms_parser import parse_sms
 from statement_parser import parse_statement
 
+import hmac
+import time
+import jwt
+from fastapi import Header, Depends, status
+
+# ─── Auth Config ───────────────────────────────────────────────
+
+APP_PIN = os.environ.get("APP_PIN", "1234")
+AUTH_SECRET = os.environ.get("AUTH_SECRET", "super-secret-moneytrack-key-change-me")
+TOKEN_EXPIRY_DAYS = 30
+
 # ─── App Setup ─────────────────────────────────────────────────
 
 app = FastAPI(title="Expense Tracker")
@@ -95,6 +106,37 @@ class SmsParseRequest(BaseModel):
     text: str
 
 
+class PinVerifyRequest(BaseModel):
+    pin: str
+
+
+# ─── Auth Helpers ──────────────────────────────────────────────
+
+
+def create_session_token() -> str:
+    payload = {
+        "sub": "moneytrack_user",
+        "exp": int(time.time()) + (TOKEN_EXPIRY_DAYS * 86400),
+        "iat": int(time.time()),
+    }
+    return jwt.encode(payload, AUTH_SECRET, algorithm="HS256")
+
+
+def verify_session(authorization: Optional[str] = Header(None)):
+    if not APP_PIN:
+        return True
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authentication token required")
+    token = authorization.split(" ")[1]
+    try:
+        payload = jwt.decode(token, AUTH_SECRET, algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Session expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
 # ─── Helper ────────────────────────────────────────────────────
 
 
@@ -144,17 +186,32 @@ def serve_icon_512():
     return FileResponse(os.path.join(STATIC_DIR, "icon-512.png"), media_type="image/png")
 
 
+# ─── Auth Endpoints ────────────────────────────────────────────
+
+
+@app.post("/api/auth/verify-pin")
+def verify_pin(data: PinVerifyRequest):
+    if hmac.compare_digest(data.pin.strip(), APP_PIN.strip()):
+        return {"status": "ok", "token": create_session_token()}
+    raise HTTPException(status_code=401, detail="Incorrect PIN")
+
+
+@app.get("/api/auth/check")
+def check_auth(user=Depends(verify_session)):
+    return {"status": "authenticated"}
+
+
 # ─── Accounts CRUD ─────────────────────────────────────────────
 
 
-@app.get("/api/accounts")
+@app.get("/api/accounts", dependencies=[Depends(verify_session)])
 def list_accounts():
     with get_db() as conn:
         rows = conn.execute("SELECT * FROM accounts ORDER BY name").fetchall()
         return rows_to_list(rows)
 
 
-@app.post("/api/accounts")
+@app.post("/api/accounts", dependencies=[Depends(verify_session)])
 def create_account(data: AccountCreate):
     with get_db() as conn:
         cur = conn.execute(
@@ -168,7 +225,7 @@ def create_account(data: AccountCreate):
         return row_to_dict(account)
 
 
-@app.put("/api/accounts/{account_id}")
+@app.put("/api/accounts/{account_id}", dependencies=[Depends(verify_session)])
 def update_account(account_id: int, data: AccountUpdate):
     with get_db() as conn:
         existing = conn.execute(
@@ -199,7 +256,7 @@ def update_account(account_id: int, data: AccountUpdate):
         return row_to_dict(account)
 
 
-@app.delete("/api/accounts/{account_id}")
+@app.delete("/api/accounts/{account_id}", dependencies=[Depends(verify_session)])
 def delete_account(account_id: int):
     with get_db() as conn:
         existing = conn.execute(
@@ -215,14 +272,14 @@ def delete_account(account_id: int):
 # ─── Categories CRUD ───────────────────────────────────────────
 
 
-@app.get("/api/categories")
+@app.get("/api/categories", dependencies=[Depends(verify_session)])
 def list_categories():
     with get_db() as conn:
         rows = conn.execute("SELECT * FROM categories ORDER BY name").fetchall()
         return rows_to_list(rows)
 
 
-@app.post("/api/categories")
+@app.post("/api/categories", dependencies=[Depends(verify_session)])
 def create_category(data: CategoryCreate):
     with get_db() as conn:
         try:
@@ -239,7 +296,7 @@ def create_category(data: CategoryCreate):
         return row_to_dict(cat)
 
 
-@app.put("/api/categories/{category_id}")
+@app.put("/api/categories/{category_id}", dependencies=[Depends(verify_session)])
 def update_category(category_id: int, data: CategoryUpdate):
     with get_db() as conn:
         existing = conn.execute(
@@ -268,7 +325,7 @@ def update_category(category_id: int, data: CategoryUpdate):
         return row_to_dict(cat)
 
 
-@app.delete("/api/categories/{category_id}")
+@app.delete("/api/categories/{category_id}", dependencies=[Depends(verify_session)])
 def delete_category(category_id: int):
     with get_db() as conn:
         existing = conn.execute(
@@ -284,7 +341,7 @@ def delete_category(category_id: int):
 # ─── Transactions CRUD ─────────────────────────────────────────
 
 
-@app.get("/api/transactions")
+@app.get("/api/transactions", dependencies=[Depends(verify_session)])
 def list_transactions(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
@@ -345,7 +402,7 @@ def list_transactions(
         return {"transactions": rows_to_list(rows), "total": total}
 
 
-@app.post("/api/transactions")
+@app.post("/api/transactions", dependencies=[Depends(verify_session)])
 def create_transaction(data: TransactionCreate):
     tx_date = data.date or date.today().isoformat()
     with get_db() as conn:
@@ -380,7 +437,7 @@ def create_transaction(data: TransactionCreate):
         return row_to_dict(tx)
 
 
-@app.put("/api/transactions/{tx_id}")
+@app.put("/api/transactions/{tx_id}", dependencies=[Depends(verify_session)])
 def update_transaction(tx_id: int, data: TransactionUpdate):
     with get_db() as conn:
         existing = conn.execute(
@@ -425,7 +482,7 @@ def update_transaction(tx_id: int, data: TransactionUpdate):
         return row_to_dict(tx)
 
 
-@app.delete("/api/transactions/{tx_id}")
+@app.delete("/api/transactions/{tx_id}", dependencies=[Depends(verify_session)])
 def delete_transaction(tx_id: int):
     with get_db() as conn:
         existing = conn.execute(
@@ -441,7 +498,7 @@ def delete_transaction(tx_id: int):
 # ─── SMS Parser ────────────────────────────────────────────────
 
 
-@app.post("/api/sms/parse")
+@app.post("/api/sms/parse", dependencies=[Depends(verify_session)])
 def parse_sms_endpoint(data: SmsParseRequest):
     result = parse_sms(data.text)
     if result is None:
@@ -456,7 +513,7 @@ ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".md"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
-@app.post("/api/statements/upload")
+@app.post("/api/statements/upload", dependencies=[Depends(verify_session)])
 async def upload_statement(file: UploadFile = File(...), password: Optional[str] = File(None)):
     # Validate extension
     ext = _os.path.splitext(file.filename or "")[1].lower()
@@ -503,7 +560,7 @@ async def upload_statement(file: UploadFile = File(...), password: Optional[str]
 # ─── Dashboard ─────────────────────────────────────────────────
 
 
-@app.get("/api/dashboard")
+@app.get("/api/dashboard", dependencies=[Depends(verify_session)])
 def dashboard():
     now = datetime.now()
     month_start = now.strftime("%Y-%m-01")
