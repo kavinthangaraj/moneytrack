@@ -23,7 +23,9 @@ def parse_date(text):
         "%d/%m/%Y",
         "%d/%m/%y",
         "%d %b %Y",
+        "%d %b %y",
         "%d %B %Y",
+        "%d %B %y",
         "%b %d, %Y",
         "%B %d, %Y",
     ]
@@ -178,14 +180,21 @@ def parse_statement_line(line):
     amount = None
 
     # Pattern: date followed by description followed by amount
-    # Date patterns: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY, DD Mon YYYY
-    date_pattern = r"(\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4})"
+    # Date patterns: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY, DD Mon YYYY, DD Mon YY
+    date_pattern = r"(\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{2,4})"
 
-    # Amount patterns: Rs.X, Rs. X, INR X, Rs.X.XX, with optional commas
+    # Amount patterns: Rs.X, INR X, ₹ X, or bare numbers with commas/decimals
     amount_pattern = r"(?:Rs\.?|INR|₹)\s*([\d,]+\.?\d*)"
+    bare_amount_pattern = r"(?<!\d)(\d{1,3}(?:,\d{3})*\.\d{2})(?!\d)"
 
-    # Try to find amount first
+    # Try to find amount first — Rs/INR prefix, then bare number fallback
     amt_match = re.search(amount_pattern, line, re.IGNORECASE)
+    if not amt_match:
+        # Fallback: match bare numbers like 1,783.87 (common in table-formatted statements)
+        bare_matches = list(re.finditer(bare_amount_pattern, line))
+        if bare_matches:
+            # Use the last bare number on the line (amount is typically the rightmost column)
+            amt_match = bare_matches[-1]
     if amt_match:
         amount = parse_amount(amt_match.group(1))
 
