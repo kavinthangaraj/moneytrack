@@ -648,6 +648,12 @@
                 cursorStr = cursor.toISOString().split('T')[0];
             }
 
+            // All-time total spend and first transaction month
+            const allExpenses = transactions.filter(t => t.type === 'expense');
+            const totalAllTime = allExpenses.reduce((s, t) => s + Number(t.amount || 0), 0);
+            const allDates = transactions.map(t => (t.date || '').slice(0, 7)).filter(Boolean).sort();
+            const firstMonth = allDates.length > 0 ? allDates[0] : null;
+
             return {
                 this_month: thisMonth,
                 this_month_income: thisMonthIncome,
@@ -655,6 +661,8 @@
                 this_month_transactions: thisMonthTxs.length,
                 avg_daily_spend: Math.round(avgDailySpend),
                 streak_days: streakDays,
+                total_all_time: Math.round(totalAllTime),
+                first_month: firstMonth,
                 top_category: topCategory,
                 categories: catBreakdown,
                 accounts: accBreakdown,
@@ -1018,7 +1026,14 @@
 
                     {/* Monthly Trend + Categories */}
                     <div className="card-95 p-4">
-                        <span className="label-95 font-pixel !text-[10px]">MONTHLY TREND</span>
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="label-95 font-pixel !text-[10px] !mb-0">MONTHLY TREND</span>
+                            {data.first_month && (
+                                <span className="text-xs font-bold text-win95-dark">
+                                    Total spent since {(() => { const [y,mo] = data.first_month.split('-'); return new Date(y,mo-1).toLocaleString('en',{month:'short',year:'numeric'}); })()}: {fmt(data.total_all_time)}
+                                </span>
+                            )}
+                        </div>
                         {(data.monthly || []).length > 0 && (
                             <div className="chart-95 mt-2">
                                 <BarChart

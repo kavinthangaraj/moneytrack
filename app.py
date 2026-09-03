@@ -586,6 +586,17 @@ def dashboard():
             """
         ).fetchall()
 
+        # All-time total spend and first transaction month
+        row = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = 'expense'"
+        ).fetchone()
+        total_all_time = float(row["total"]) if row else 0
+
+        row = conn.execute(
+            "SELECT MIN(strftime('%Y-%m', date)) as first_month FROM transactions"
+        ).fetchone()
+        first_month = row["first_month"] if row and row["first_month"] else None
+
         # Streak: consecutive days (backwards from today) with >=1 transaction
         date_rows = conn.execute(
             "SELECT DISTINCT \"date\" FROM transactions"
@@ -610,6 +621,8 @@ def dashboard():
             "this_month_transactions": this_month_transactions,
             "avg_daily_spend": round(float(avg_daily_spend), 2),
             "streak_days": streak_days,
+            "total_all_time": round(total_all_time, 2),
+            "first_month": first_month,
             "top_category": top_cat,
             "categories": rows_to_list(categories),
             "accounts": rows_to_list(accounts),
